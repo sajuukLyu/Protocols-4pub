@@ -49,7 +49,7 @@ qc_dir %>% dir.create()
 qc_cmd <- glue("fastqc -o {qc_dir} -t 8 0_fastq/{file_name} &")
 cat(qc_cmd[1])
 
-write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col_names = F)
+write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
 # multiqc -o 1_qc -f -n qc.raw 1_qc/*.zip
 
 # * * 2.2. Trim -----------------------------------------------------------
@@ -92,7 +92,7 @@ qc_dir %>% dir.create()
 qc_cmd <- glue("fastqc -o {qc_dir} -t 8 0_fastq/{file_name} &")
 cat(qc_cmd[1])
 
-write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col_names = F)
+write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
 # multiqc -o 3_qc -f -n qc.trim 3_qc/*.zip
 
 # * * 2.4. Map ------------------------------------------------------------
