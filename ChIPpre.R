@@ -179,10 +179,12 @@ input_sample <- grep("in", sample_name, value = T)
 chip_sample <- grep("in", sample_name, value = T, invert = T)
 input_sample %<>% rep(each = 3)
 
+org <- "hs"
+
 peak_cmd <- glue(
   "macs2 callpeak -t {fil_dir}/{chip_sample}.filter.bam -c {fil_dir}/{input_sample}.filter.bam \\
-  -f BAMPE -g hs --broad --keep-dup all -n {chip_sample} \\
-  -B --outdir {peak_dir} > {peak_dir}/{chip_sample}.log 2>&1 &\n")
+  -f BAMPE -g {org} --broad --keep-dup all -n {chip_sample} \\
+  --outdir {peak_dir} > {peak_dir}/{chip_sample}.log 2>&1 &")
 cat(peak_cmd[1])
 
 write.table(c("#!/bin/bash\n", peak_cmd), glue("code/{peak_dir}.sh"), quote = F, row.names = F, col.names = F)
@@ -227,7 +229,9 @@ setCMD <- function(cmd, dir = "", sepN = 1, clu = F) {
       "#!/bin/bash") %>%
       c(.x)}) %T>%
     iwalk(~ write.table(.x, glue("{dir}/batch{.y}.sh"), quote = F, row.names = F, col.names = F)) %>%
-    names() %>% map_chr(~ glue("{head} {dir}/batch{.x}.sh", head = ifelse(clu, "pkubatch", "sh"))) %>%
+    names() %>% map_chr(~ glue("{head} {dir}/batch{.x}.sh {tail}",
+                               head = ifelse(clu, "pkubatch", "sh"),
+                               tail = ifelse(clu, "; sleep 1", "&"))) %>%
     c("#!/bin/bash", .) %>% as_tibble() %>%
     write_delim(glue("{dir}/submit.sh"), "\n", col_names = F)
 }

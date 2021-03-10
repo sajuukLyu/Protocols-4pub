@@ -82,7 +82,7 @@ setCMD(trim_cmd, str_c("code/", trim_dir), 8, F)
 qc_dir <- "3_qc"
 qc_dir %>% dir.create()
 
-qc_cmd <- glue("fastqc -o {qc_dir} -t 8 0_fastq/{file_name} &")
+qc_cmd <- glue("fastqc -o {qc_dir} -t 8 {trim_dir}/{file_name} &")
 cat(qc_cmd[1])
 
 write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
@@ -159,7 +159,7 @@ setCMD <- function(cmd, dir = "", sepN = 1, clu = F) {
     iwalk(~ write.table(.x, glue("{dir}/batch{.y}.sh"), quote = F, row.names = F, col.names = F)) %>%
     names() %>% map_chr(~ glue("{head} {dir}/batch{.x}.sh {tail}",
                                head = ifelse(clu, "pkubatch", "sh"),
-                               tail = ifelse(clu, "", "&"))) %>%
+                               tail = ifelse(clu, "; sleep 1", "&"))) %>%
     c("#!/bin/bash", .) %>% as_tibble() %>%
     write_delim(glue("{dir}/submit.sh"), "\n", col_names = F)
 }
