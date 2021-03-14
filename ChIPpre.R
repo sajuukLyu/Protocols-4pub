@@ -74,13 +74,7 @@ cat(trim_cmd[1])
 trim_dir <- "2_trim"
 trim_dir %>% str_c("code/", .) %>% dir.create()
 
-sepN <- 6
-
-trim_cmd %>% tapply(seq_along(.) %% sepN, function(x) c("#!/bin/bash", x)) %T>%
-  iwalk(~ write_delim(.x, glue("code/{trim_dir}/batch{.y}.sh"), "\n", col_names = F)) %>%
-  names() %>% map_chr(~ glue("sh code/{trim_dir}/batch{.x}.sh")) %>%
-  c("#!/bin/bash", .) %>% as_tibble() %>%
-  write_delim(glue("code/{trim_dir}/submit.sh"), "\n", col_names = F)
+setCMD(trim_cmd, str_c("code/", trim_dir), 8, F)
 
 # * * 2.3. QC for trimmed data --------------------------------------------
 
@@ -209,6 +203,36 @@ cat(bw_comp_cmd[1])
 
 write.table(c("#!/bin/bash\n", bw_cmd), glue("code/{bw_dir}.sh"), quote = F, row.names = F, col.names = F)
 write.table(c("#!/bin/bash\n", bw_comp_cmd), glue("code/{bw_dir}_comp.sh"), quote = F, row.names = F, col.names = F)
+
+# * * 2.11. Heat ----------------------------------------------------------
+
+chip_type <- chip_sample %>% str_replace(".*-", "")
+bw_group <- tapply(chip_sample, chip_type, c) %>%
+  map(~ glue("{bw_dir}/{.x}.comp.bw")) %>%
+  map(~ str_c(.x, collapse = " "))
+
+heat_dir <- "11_heat"
+heat_dir %>% dir.create()
+
+bed_file <- "all.bed"
+out_prefix <- str_c("all_", names(bw_group))
+
+mtx_cmd <- glue(
+  "computeMatrix scale-regions -p 6 -R {heat_dir}/{bed_file} \\
+  -S {bw_group} -o {heat_dir}/{out_prefix}_mtx.gz &"
+)
+cat(mtx_cmd[1])
+
+heat_cmd <- glue(
+  "plotHeatmap -m {heat_dir}/{out_prefix}_mtx.gz --colorMap RdBu_r \\
+  -o {heat_dir}/{out_prefix}_heatmap.pdf \\
+  --outFileNameMatrix {heat_dir}/{out_prefix}_value.txt \\
+  --outFileSortedRegions {heat_dir}/{out_prefix}_region.bed &"
+)
+cat(heat_cmd[1])
+
+write.table(c("#!/bin/bash\n", mtx_cmd), glue("code/{heat_dir}_1.sh"), quote = F, row.names = F, col.names = F)
+write.table(c("#!/bin/bash\n", heat_cmd), glue("code/{heat_dir}_2.sh"), quote = F, row.names = F, col.names = F)
 
 # * 3. Function -----------------------------------------------------------
 
