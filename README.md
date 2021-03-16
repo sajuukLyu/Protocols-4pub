@@ -23,7 +23,7 @@ These files including three main parts:
 
 ### File description
 
-1. Preprocess pipeline
+- Preprocess pipeline
 
 | **file name** | **description**                                            |
 | ------------- | ---------------------------------------------------------- |
@@ -32,7 +32,7 @@ These files including three main parts:
 | ChIPpre.R     | Preprocess pipelines for ChIP-seq                          |
 | WGBSpre.R     | Preprocess pipelines for Whole Genome Bisulfite Sequencing |
 
-2. Downstream analysis script
+- Downstream analysis script
 
 | **file name**            | **Omics** | **description**                                       |
 | ------------------------ | --------- | ----------------------------------------------------- |
@@ -40,11 +40,21 @@ These files including three main parts:
 | bulkRNAana_2a_DESeq.R    | RNA       | Perform DESeq analysis (for sample without replicate) |
 | bulkRNAana_2b_DESeq2.R   | RNA       | Perform DESeq2 analysis (for sample with replicates)  |
 
-3. Visualization
+- Visualization
 
 ### Pipeline
 
-1. bulk RNA-seq
-<img src="mermaidPlot\bulkRNApre.svg">
+- bulk RNA-seq
+
+<img src="mermaidPlot\bulkRNApre.svg" align=center>
+
+- bulk ATAC-seq
 
 
+
+
+- ChIP-seq
+
+
+
+- WGBS

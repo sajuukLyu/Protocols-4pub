@@ -10,12 +10,61 @@
 flowchart TD;
 classDef default stroke-width: 2px ;
 classDef qc fill: #ffffff ;
-	A("Raw data (.fastq.gz)") -->|fastqc| a{{"Quality Control"}};
-	A -->|trimmomatic| B("Trim (.fastq.gz)");
-	B -->|fastqc| a;
-	B -->|STAR| C("Map (.bam)");
-	C -->|RseQC| D{{"Infer experiment"}};
-	C -->|featureCount| E("Count (.txt)");
-	E --> F("Down stream analysis");
-class a,D qc
+	A("Raw data (.fastq.gz)") -->|Fastqc| a{{"Quality Control"}}
+	A -->|Trimmomatic| B("Trim (.fastq.gz)")
+	B -->|Fastqc| a
+	B -->|STAR| C("Map (.bam)")
+	C -->|RseQC| c{{"Infer experiment"}}
+	C -->|featureCount| D("Count (.txt)")
+	D --> E("Down stream analysis")
+class a,c qc
 ```
+
+```mermaid
+flowchart TD;
+classDef default stroke-width: 2px ;
+classDef qc fill: #ffffff ;
+	A("Raw data (.fastq.gz)") -->|Fastqc| a{{"Quality Control"}}
+	A -->|Trimmomatic| B("Trim (.fastq.gz)")
+	B -->|Fastqc| a
+	B -->|Bowtie2| C("Map (.sam)")
+	C -->|Samtools| D("Sort (.bam)")
+	D -->|Picard| E("Deduplication (.bam)")
+	E -->|Samtools + egrep| F("Filter (.bam)")
+	E -->|Samtools: index + deepTools: bamCoverage| J("Track (.bw)")
+	F -->|Picard: CollectInsertSizeMetrics| f{{"Insert size"}}
+	F -->|bedtools| G("Shift (.bed)")
+	subgraph H [Call peak for every sample]
+	a1("a rep_1\n(.nPeak)")
+	a2("a rep_2\n(.nPeak)")
+	an("...")
+	b1("b rep_1\n(.nPeak)")
+	b2("b rep_2\n(.nPeak)")
+	bn("...")
+	nn("...")
+	end
+	subgraph I [Call peak for grouped sample]
+		subgraph Ia [a]
+		Ia_1("a rep_1")
+		Ia_2("a rep_2")
+		Ia_n("...")
+		an("...")
+		end
+		Ia --> Ia_res1("(.nPeak)")
+		Ia --> Ia_res2("(.bdg)")
+		subgraph Ib [b]
+		Ib_1("b rep_1")
+		Ib_2("b rep_2")
+		Ib_n("...")
+		an("...")
+		end
+		Ib --> Ib_res1("(.nPeak)")
+		Ib --> Ib_res2("(.bdg)")
+		In("...")
+	end
+	G -->|MACS2| H
+	G -->|MACS2| I
+	
+class a,f,Ia,Ib qc
+```
+
