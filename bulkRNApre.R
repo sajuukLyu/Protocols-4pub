@@ -140,7 +140,7 @@ write.table(c("#!/bin/bash\n", count_cmd), glue("code/{count_dir}.sh"), quote = 
 
 # * 3. Function -----------------------------------------------------------
 
-setCMD <- function(cmd, dir = "", sepN = 1, clu = F) {
+setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
   cmd %>% tapply(seq_along(.) %% sepN, c) %>% imap(~ {
     ifelse(clu, glue(
       "#!/bin/bash

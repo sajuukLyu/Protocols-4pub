@@ -261,7 +261,7 @@ write.table(c("#!/bin/bash\n", motif_cmd), "code/13_motif.sh", quote = F, row.na
 
 # * 3. Function -----------------------------------------------------------
 
-setCMD <- function(cmd, dir = "", sepN = 1, clu = F) {
+setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
   cmd %>% tapply(seq_along(.) %% sepN, c) %>% imap(~ {
     ifelse(clu, glue(
       "#!/bin/bash
