@@ -54,6 +54,10 @@ These files including three main parts:
 
 - ChIP-seq
 
-
+<img src="mermaidPlot\ChIPpre.svg" align=center>
 
 - WGBS
+
+<img src="mermaidPlot\WGBSpre.svg" align=center>
+
+
