@@ -50,8 +50,7 @@ These files including three main parts:
 
 - bulk ATAC-seq
 
-
-
+<img src="mermaidPlot\bulkATACpre.svg" align=center>
 
 - ChIP-seq
 

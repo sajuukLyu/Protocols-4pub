@@ -16,7 +16,7 @@ classDef qc fill: #ffffff ;
 	B -->|STAR| C("Map (.bam)")
 	C -->|RseQC| c{{"Infer experiment"}}
 	C -->|featureCount| D("Count (.txt)")
-	D --> E("Down stream analysis")
+	D --> E("Downstream analysis")
 class a,c qc
 ```
 
@@ -64,7 +64,15 @@ classDef qc fill: #ffffff ;
 	end
 	G -->|MACS2| H
 	G -->|MACS2| I
-	
+	subgraph K [Consensus peakset]
+	Ka("a (.nPeak)")
+	Kb("b (.nPeak)")
+	Kn("...")
+	end
+	I -->|IDR| K
+    H -->|IDR| K
+	I -->|bedGraphToBigWig| L("Track (.bw)")
+	K --> M("Downstream analysis")
 class a,f,Ia,Ib qc
 ```
 
