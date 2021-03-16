@@ -45,7 +45,6 @@ These files including three main parts:
 ### Pipeline
 
 1. bulk RNA-seq
-
-[![](https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggVEQ7XG5cdEEoXCJSYXcgZGF0YSAoLmZhc3RxLmd6KVwiKSAtLT58ZmFzdHFjfCBhKFwiUXVhbGl0eSBDb250cm9sXCIpXG5cdEEgLS0-fHRyaW1tb21hdGljfCBCKFwiVHJpbSAoLmZhc3RxLmd6KVwiKVxuXHRCIC0tPnxmYXN0cWN8IGFcblx0QiAtLT58U1RBUnwgQyhcIk1hcCAoLmJhbSlcIilcblx0QyAtLT58UnNlUUN8IEQoXCJJbmZlciBleHBlcmltZW50XCIpXG5cdEMgLS0-fGZlYXR1cmVDb3VudHwgRShcIkNvdW50ICgudHh0KVwiKVxuXHRFIC0tPiBGKFwiRG93biBzdHJlYW0gYW5hbHlzaXNcIikiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)
+<img src="mermaidPlot\bulkRNApre.svg">
 
 
