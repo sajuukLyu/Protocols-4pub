@@ -91,7 +91,7 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 
 # * * 2.4. Map ------------------------------------------------------------
 
-ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome" # path to reference
+ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome"
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -118,7 +118,7 @@ setCMD(sort_cmd, str_c("code/", sort_dir), 6, F)
 
 # * * 2.6. Dedup ----------------------------------------------------------
 
-picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar" # path to picard
+picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar"
 
 dedup_dir <- "6_dedup"
 dedup_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -128,7 +128,7 @@ dedup_cmd <- glue(
   I={sort_dir}/{sample_name}.bam \\
   O={dedup_dir}/{sample_name}.dedup.bam \\
   M={dedup_dir}/{sample_name}.dedup.txt \\
-  REMOVE_DUPLICATES=true")
+  REMOVE_DUPLICATES=true > {dedup_dir}/{sample_name}.dedup.log 2>&1")
 cat(dedup_cmd[1])
 
 setCMD(dedup_cmd, str_c("code/", dedup_dir), 6, F)
@@ -147,7 +147,7 @@ write.table(c("#!/bin/bash\n", filter_cmd), glue("code/{fil_dir}.sh"), quote = F
 
 # * * 2.8. Insert ---------------------------------------------------------
 
-picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar" # path to picard
+picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar"
 
 ins_dir <- "8_insert"
 ins_dir %>% dir.create()
@@ -156,7 +156,7 @@ ins_cmd <- glue(
   "java -Xms2g -Xmx8g -XX:ParallelGCThreads=8 -jar {picard} CollectInsertSizeMetrics \\
   I={fil_dir}/{sample_name}.filter.bam \\
   O={ins_dir}/{sample_name}.txt \\
-  H={ins_dir}/{sample_name}.pdf > {ins_dir}/{sample_name}.log 2>&1")
+  H={ins_dir}/{sample_name}.pdf > {ins_dir}/{sample_name}.log 2>&1 &")
 cat(ins_cmd[1])
 
 write.table(c("#!/bin/bash\n", ins_cmd), glue("code/{ins_dir}.sh"), quote = F, row.names = F, col.names = F)

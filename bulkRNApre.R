@@ -117,8 +117,8 @@ infer_dir %>% dir.create()
 
 infer_cmd <- glue(
   "{infer_path}/infer_experiment.py \\
-  -r {gene_bed} -i {map_dir}/{sample_name}Aligned.out.bam > {infer_dir}/{sample_name}.infer.txt 2>&1")
-message(infer_cmd[1])
+  -r {gene_bed} -i {map_dir}/{sample_name}Aligned.out.bam > {infer_dir}/{sample_name}.infer.txt 2>&1 &")
+cat(infer_cmd[1])
 
 write.table(c("#!/bin/bash\n", infer_cmd), glue("code/{infer_dir}.sh"), quote = F, row.names = F, col.names = F)
 

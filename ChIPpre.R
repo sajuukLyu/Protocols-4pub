@@ -57,7 +57,7 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 dir.create("2_trim")
 dir.create(".2_untrim")
 
-trim <- "/lustre/user/liclab/lvyl/app/Trimmomatic-0.39" # path to trimmomatic
+trim <- "/lustre/user/liclab/lvyl/app/Trimmomatic-0.39"
 
 trim_cmd <- glue(
   "java -jar {trim}/trimmomatic-0.39.jar PE -threads 10 \\
@@ -91,7 +91,7 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 
 # * * 2.4. Map ------------------------------------------------------------
 
-ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome" # path to reference
+ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome"
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -118,7 +118,7 @@ setCMD(sort_cmd, str_c("code/", sort_dir), 6, F)
 
 # * * 2.6. Dedup ----------------------------------------------------------
 
-picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar" # path to picard
+picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar"
 
 dedup_dir <- "6_dedup"
 dedup_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
