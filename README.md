@@ -46,20 +46,7 @@ These files including three main parts:
 
 1. bulk RNA-seq
 
-```mermaid
-graph TD;
-	A("Raw data (.fastq.gz)") -->|fastqc| a("Quality Control")
-	A -->|trimmomatic| B("Trim (.fastq.gz)")
-	B -->|fastqc| a
-	B -->|STAR| C("Map (.bam)")
-	C -->|RseQC| D("Infer experiment")
-	C -->|featureCount| E("Count (.txt)")
-	E --> F("Down stream analysis")
-```
-
-
-
-
+[![](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVEQ7XG5cdEEoXCJSYXcgZGF0YSAoLmZhc3RxLmd6KVwiKSAtLT58ZmFzdHFjfCBhKFwiUXVhbGl0eSBDb250cm9sXCIpXG5cdEEgLS0-fHRyaW1tb21hdGljfCBCKFwiVHJpbSAoLmZhc3RxLmd6KVwiKVxuXHRCIC0tPnxmYXN0cWN8IGFcblx0QiAtLT58U1RBUnwgQyhcIk1hcCAoLmJhbSlcIilcblx0QyAtLT58UnNlUUN8IEQoXCJJbmZlciBleHBlcmltZW50XCIpXG5cdEMgLS0-fGZlYXR1cmVDb3VudHwgRShcIkNvdW50ICgudHh0KVwiKVxuXHRFIC0tPiBGKFwiRG93biBzdHJlYW0gYW5hbHlzaXNcIikiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVEQ7XG5cdEEoXCJSYXcgZGF0YSAoLmZhc3RxLmd6KVwiKSAtLT58ZmFzdHFjfCBhKFwiUXVhbGl0eSBDb250cm9sXCIpXG5cdEEgLS0-fHRyaW1tb21hdGljfCBCKFwiVHJpbSAoLmZhc3RxLmd6KVwiKVxuXHRCIC0tPnxmYXN0cWN8IGFcblx0QiAtLT58U1RBUnwgQyhcIk1hcCAoLmJhbSlcIilcblx0QyAtLT58UnNlUUN8IEQoXCJJbmZlciBleHBlcmltZW50XCIpXG5cdEMgLS0-fGZlYXR1cmVDb3VudHwgRShcIkNvdW50ICgudHh0KVwiKVxuXHRFIC0tPiBGKFwiRG93biBzdHJlYW0gYW5hbHlzaXNcIikiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)
 
 
 
