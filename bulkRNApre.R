@@ -8,9 +8,21 @@
 # 
 # ---
 
+# * 0. Setting ------------------------------------------------------------
+
+settingList <- list(
+  workDir = ".",
+  trimmomaticDir = "app/Trimmomatic-0.39",
+  trimAdapter = "TruSeq3-PE-2.fa",
+  mapRef = "ref/hg19-STAR-cr3",
+  inferDir = "",
+  inferGene = "",
+  countAnno = "genes.gtf"
+)
+
 # * 1. Load packages ------------------------------------------------------
 
-setwd("project/path")
+setwd(settingList$workDir)
 
 library(tidyverse)
 library(magrittr)
@@ -18,12 +30,12 @@ library(glue)
 
 # * 2. Preprocess ---------------------------------------------------------
 
-setwd("0_fastq") # contains raw fastq files
+setwd("0_fastq")
 
 list.files(".")
 
-from_file <- list.files(".", "pattern") # rename files if necessary
-to_file <- gsub(".*-1a", "sample_names", from_file)
+from_file <- list.files(".", "")
+to_file <- gsub("", "", from_file)
 
 file.rename(from_file, to_file)
 
@@ -32,7 +44,7 @@ setwd("..")
 # * * 2.0. Load data ------------------------------------------------------
 
 file_name <- list.files("0_fastq", ".gz")
-file_name <- list.files("2_trim", ".gz")
+file_name <- list.files("2_trim", ".gz") # after qc
 
 R1 <- grep("_1\\.", file_name, value = T)
 R2 <- grep("_2\\.", file_name, value = T)
@@ -57,7 +69,8 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 dir.create("2_trim")
 dir.create(".2_untrim")
 
-trim <- "/lustre/user/liclab/lvyl/app/Trimmomatic-0.39"
+trim <- settingList$trimmomaticDir
+adapter <- settingList$trimAdapter
 
 trim_cmd <- glue(
   "java -jar {trim}/trimmomatic-0.39.jar PE -threads 10 \\
@@ -66,14 +79,14 @@ trim_cmd <- glue(
   .2_untrim/{sample_name}_1.untrim.fastq.gz \\
   2_trim/{sample_name}_2.trim.fastq.gz \\
   .2_untrim/{sample_name}_2.untrim.fastq.gz \\
-  ILLUMINACLIP:{trim}/adapters/TruSeq3-PE-2.fa:2:30:7:1:true \\
+  ILLUMINACLIP:{trim}/adapters/{adapter}:2:30:7:1:true \\
   LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 > 2_trim/{sample_name}.trim.log 2>&1")
 cat(trim_cmd[1])
 
 trim_dir <- "2_trim"
 trim_dir %>% str_c("code/", .) %>% dir.create()
 
-setCMD(trim_cmd, str_c("code/", trim_dir), 8, F)
+setCMD(trim_cmd, str_c("code/", trim_dir), 1, F)
 
 # * * 2.3. QC for trimmed data --------------------------------------------
 
@@ -90,7 +103,7 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 
 # * * 2.4. Map ------------------------------------------------------------
 
-ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome"
+ref <- settingList$mapRef
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -104,13 +117,13 @@ map_cmd <- glue(
   --outFilterIntronMotifs RemoveNoncanonical")
 cat(map_cmd[1])
 
-setCMD(map_cmd, str_c("code/", map_dir), 12, T)
+setCMD(map_cmd, str_c("code/", map_dir), 1, T)
 # multiqc -o 4_map -f -n mapping 4_map
 
 # * * 2.5. Infer ----------------------------------------------------------
 
-infer_path <- "/lustre/user/liclab/lvyl/app/anaconda3/envs/lvylenv/bin"
-gene_bed <- "/lustre/user/liclab/lvyl/ref/hg19/hg19ensGene.clear.bed"
+infer_path <- settingList$inferDir
+gene_bed <- settingList$inferGene
 
 infer_dir <- "5_infer"
 infer_dir %>% dir.create()
@@ -124,7 +137,7 @@ write.table(c("#!/bin/bash\n", infer_cmd), glue("code/{infer_dir}.sh"), quote = 
 
 # * * 2.6. Count ----------------------------------------------------------
 
-gtf <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/genes/genes.gtf"
+gtf <- settingList$countAnno
 
 count_dir <- "6_count"
 count_dir %>% dir.create()

@@ -8,9 +8,21 @@
 #
 # ---
 
+# * 0. Setting ------------------------------------------------------------
+
+settingList <- list(
+  workDir = ".",
+  trimmomaticDir = "app/Trimmomatic-0.39",
+  trimAdapter = "TruSeq3-PE-2.fa",
+  mapRef = "fasta/genome",
+  picardDir = "app/picard.jar",
+  bdg2bwDir = "app/bedGraphToBigWig",
+  refLen = "fasta/genome.fa.fai"
+)
+
 # * 1. Load packages ------------------------------------------------------
 
-setwd("project/path")
+setwd(settingList$workDir)
 
 library(tidyverse)
 library(magrittr)
@@ -18,12 +30,12 @@ library(glue)
 
 # * 2. Preprocess ---------------------------------------------------------
 
-setwd("0_fastq") # contains raw fastq files
+setwd("0_fastq")
 
 list.files(".")
 
-from_file <- list.files(".", "pattern") # rename files if necessary
-to_file <- gsub(".*-1a", "sample_names", from_file)
+from_file <- list.files(".", "")
+to_file <- gsub("", "", from_file)
 
 file.rename(from_file, to_file)
 
@@ -32,7 +44,7 @@ setwd("..")
 # * * 2.0. Load data ------------------------------------------------------
 
 file_name <- list.files("0_fastq", ".gz")
-file_name <- list.files("2_trim", ".gz")
+file_name <- list.files("2_trim", ".gz") # after qc
 
 R1 <- grep("_1\\.", file_name, value = T)
 R2 <- grep("_2\\.", file_name, value = T)
@@ -57,7 +69,8 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 dir.create("2_trim")
 dir.create(".2_untrim")
 
-trim <- "/lustre/user/liclab/lvyl/app/Trimmomatic-0.39"
+trim <- settingList$trimmomaticDir
+adapter <- settingList$trimAdapter
 
 trim_cmd <- glue(
   "java -jar {trim}/trimmomatic-0.39.jar PE -threads 10 \\
@@ -66,15 +79,14 @@ trim_cmd <- glue(
   .2_untrim/{sample_name}_1.untrim.fastq.gz \\
   2_trim/{sample_name}_2.trim.fastq.gz \\
   .2_untrim/{sample_name}_2.untrim.fastq.gz \\
-  ILLUMINACLIP:{trim}/adapters/TruSeq3-PE-2.fa:2:30:7:1:true \\
+  ILLUMINACLIP:{trim}/adapters/{adapter}:2:30:7:1:true \\
   LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 > 2_trim/{sample_name}.trim.log 2>&1")
-
 cat(trim_cmd[1])
 
 trim_dir <- "2_trim"
 trim_dir %>% str_c("code/", .) %>% dir.create()
 
-setCMD(trim_cmd, str_c("code/", trim_dir), 8, F)
+setCMD(trim_cmd, str_c("code/", trim_dir), 1, F)
 
 # * * 2.3. QC for trimmed data --------------------------------------------
 
@@ -83,7 +95,7 @@ setCMD(trim_cmd, str_c("code/", trim_dir), 8, F)
 qc_dir <- "3_qc"
 qc_dir %>% dir.create()
 
-qc_cmd <- glue("fastqc -o {qc_dir} -t 8 0_fastq/{file_name} &")
+qc_cmd <- glue("fastqc -o {qc_dir} -t 8 {trim_dir}/{file_name} &")
 cat(qc_cmd[1])
 
 write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
@@ -91,7 +103,7 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 
 # * * 2.4. Map ------------------------------------------------------------
 
-ref <- "/lustre/user/liclab/lvyl/ref/hg19/refdata-cellranger-hg19-3.0.0/fasta/genome"
+ref <- settingList$mapRef
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -102,7 +114,7 @@ map_cmd <- glue(
   -S {map_dir}/{sample_name}.sam > {map_dir}/{sample_name}.log 2>&1")
 cat(map_cmd[1])
 
-setCMD(map_cmd, str_c("code/", map_dir), 6, T)
+setCMD(map_cmd, str_c("code/", map_dir), 1, T)
 
 # * * 2.5. Sort -----------------------------------------------------------
 
@@ -114,11 +126,11 @@ sort_cmd <- glue(
   samtools sort -@ 10 > {sort_dir}/{sample_name}.bam")
 cat(sort_cmd[1])
 
-setCMD(sort_cmd, str_c("code/", sort_dir), 6, F)
+setCMD(sort_cmd, str_c("code/", sort_dir), 1, F)
 
 # * * 2.6. Dedup ----------------------------------------------------------
 
-picard <- "/lustre/user/liclab/lvyl/app/picard-2.18.21/picard.jar"
+picard <- settingList$picardDir
 
 dedup_dir <- "6_dedup"
 dedup_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
@@ -131,7 +143,7 @@ dedup_cmd <- glue(
   REMOVE_DUPLICATES=true")
 cat(dedup_cmd[1])
 
-setCMD(dedup_cmd, str_c("code/", dedup_dir), 6, F)
+setCMD(dedup_cmd, str_c("code/", dedup_dir), 1, F)
 
 # * * 2.7. Filter ---------------------------------------------------------
 
@@ -231,8 +243,8 @@ heat_cmd <- glue(
 )
 cat(heat_cmd[1])
 
-write.table(c("#!/bin/bash\n", mtx_cmd), glue("code/{heat_dir}_1.sh"), quote = F, row.names = F, col.names = F)
-write.table(c("#!/bin/bash\n", heat_cmd), glue("code/{heat_dir}_2.sh"), quote = F, row.names = F, col.names = F)
+write.table(c("#!/bin/bash\n", mtx_cmd), glue("code/{heat_dir}_mtx.sh"), quote = F, row.names = F, col.names = F)
+write.table(c("#!/bin/bash\n", heat_cmd), glue("code/{heat_dir}.sh"), quote = F, row.names = F, col.names = F)
 
 # * 3. Function -----------------------------------------------------------
 
@@ -259,4 +271,3 @@ setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
     c("#!/bin/bash", .) %>% as_tibble() %>%
     write_delim(glue("{dir}/submit.sh"), "\n", col_names = F)
 }
-
