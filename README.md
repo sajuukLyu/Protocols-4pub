@@ -50,11 +50,14 @@ These files including three main parts:
 
 - bulk ATAC-seq
 
-
-
+<img src="mermaidPlot\bulkATACpre.svg" align=center>
 
 - ChIP-seq
 
-
+<img src="mermaidPlot\ChIPpre.svg" align=center>
 
 - WGBS
+
+<img src="mermaidPlot\WGBSpre.svg" align=center>
+
+
