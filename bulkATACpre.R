@@ -327,7 +327,7 @@ cat(mat_cmd)
 
 heat_cmd <- glue(
   "plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o TSS.heatmap.pdf \\
-  --outFileNameMatrix {heat_dir}/TSS_value.txt.gz --outFileSortedRegions {heat_dir}/TSS_region.bed &")
+  --outFileNameMatrix {heat_dir}/TSS_value.txt --outFileSortedRegions {heat_dir}/TSS_region.bed &")
 cat(heat_cmd)
 
 write.table(c("#!/bin/bash\n", mat_cmd), glue("code/{heat_dir}_mtx.sh"), quote = F, row.names = F, col.names = F)
