@@ -10,7 +10,7 @@
 
 # * 1. Load packages ------------------------------------------------------
 
-setwd("project/path")
+setwd("exampleData/RNA")
 
 # grammar
 library(tidyverse)
@@ -28,8 +28,9 @@ library(DESeq2)
 dataMtx <- readRDS("dataMtx.rds")
 
 colnames(dataMtx)
-usedMtx <- dataMtx[c(
-  c("wanted sample names"),
+usedMtx <- dataMtx[, c(
+  # c("wanted sample names"),
+  1:7,
   NULL
 )]
 
@@ -39,11 +40,11 @@ dir.create("DESeq2")
 
 se <- SummarizedExperiment(assays = list(counts = as.matrix(usedMtx)))
 se$condition <- factor(
-  c("a", "b", "c"),
-  levels = c("a", "b", "c")
+  rep(c("F", "XF"), c(3, 4)),
+  levels = c("F", "XF")
 )
 
-dds <- DESeqDataSet(se, design = ~condition)
+dds <- DESeqDataSet(se, design = ~ condition)
 
 # filter genes with low expression level
 rs <- rowMeans(usedMtx)
@@ -58,10 +59,11 @@ saveRDS(vsd, "DESeq2/vsd.rds")
 # perform DEG test
 dds <- DESeq(dds)
 
-resultsNames(earlyDDS)
+resultsNames(dds)
 
 DEGres <- list()
-DEGres$a_vs_b <- lfcShrink(dds, coef = "condition_a_vs_b", type = "apeglm")
-DEGres$a_vs_c <- lfcShrink(dds, coef = "condition_a_vs_c", type = "apeglm")
+DEGres$XF_vs_F <- lfcShrink(dds, coef = "condition_XF_vs_F", type = "apeglm")
 
-iwalk(DEGres, ~ write_csv(.x, glue("DESeq2/{.y}.DEG.csv")))
+iwalk(DEGres, ~ write.csv(.x, glue("DESeq2/{.y}.DEG.csv")))
+
+saveRDS(dds, "DESeq2/dds.rds")

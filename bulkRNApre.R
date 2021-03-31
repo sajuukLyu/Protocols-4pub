@@ -87,6 +87,7 @@ trim_dir <- "2_trim"
 trim_dir %>% str_c("code/", .) %>% dir.create()
 
 setCMD(trim_cmd, str_c("code/", trim_dir), 1, F)
+# multiqc -o 2_trim -f -n trim 2_trim/*.log
 
 # * * 2.3. QC for trimmed data --------------------------------------------
 
@@ -118,7 +119,7 @@ map_cmd <- glue(
 cat(map_cmd[1])
 
 setCMD(map_cmd, str_c("code/", map_dir), 1, T)
-# multiqc -o 4_map -f -n mapping 4_map
+# multiqc -o 4_map -f -n map 4_map/*.out
 
 # * * 2.5. Infer ----------------------------------------------------------
 

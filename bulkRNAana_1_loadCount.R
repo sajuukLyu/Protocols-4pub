@@ -10,7 +10,7 @@
 
 # * 1. Load packages ------------------------------------------------------
 
-setwd("project/path")
+setwd("exampleData/RNA")
 
 library(tidyverse)
 library(magrittr)
@@ -18,13 +18,15 @@ library(magrittr)
 # * 2. Load data ----------------------------------------------------------
 
 # This file is the first 7 columns of the featureCount output file.
-anno <- read_rds("hg19anno.rds")
+anno <- readRDS("../../data/hg19anno.rds")
 
 dataPath <- "data"
-usedData <- list.files(dataPath, full = T)
+usedData <- list.files(dataPath, "txt", full = T)
 
 dataMtx <- map(usedData, ~ read_delim(.x, delim = "\t", comment = "#")) %>%
-  map(~ .x[-1:-7]) %>% purrr::reduce(cbind) # the first 7 cols can be saved as an annotation file.
+  map(~ .x[-1:-7]) %>%
+  purrr::reduce(cbind) %>%
+  as.matrix() # the first 7 cols can be saved as an annotation file.
 
 rownames(dataMtx) <- scater::uniquifyFeatureNames(anno$Geneid, anno$gene_name)
 colnames(dataMtx) %<>% str_replace_all(".*map/|Aligned.*", "")
