@@ -2,7 +2,7 @@
 
 ## *----Reusable code collection*
 
-##### 16 March, 2021
+##### 31 March, 2021
 
 Multi-omics analysis protocols concluded by Yulin Lyu (Cheng Li Lab, Peking University, <lvyulin@pku.edu.cn>).
 
@@ -25,7 +25,7 @@ These files including three main parts:
 
 - Preprocess pipeline
 
-| **file name** | **description**                                            |
+| file name     | description                                                |
 | ------------- | ---------------------------------------------------------- |
 | bulkATACpre.R | Preprocess pipelines for bulk ATAC-seq                     |
 | bulkRNApre.R  | Preprocess pipelines for bulk RNA-seq                      |
@@ -34,13 +34,21 @@ These files including three main parts:
 
 - Downstream analysis script
 
-| **file name**            | **Omics** | **description**                                       |
-| ------------------------ | --------- | ----------------------------------------------------- |
-| bulkRNAana_1_loadCount.R | RNA       | Load multiple results and convert to count Matrix     |
-| bulkRNAana_2a_DESeq.R    | RNA       | Perform DESeq analysis (for sample without replicate) |
-| bulkRNAana_2b_DESeq2.R   | RNA       | Perform DESeq2 analysis (for sample with replicates)  |
+| file name                | omics | description                                           |
+| ------------------------ | ----- | ----------------------------------------------------- |
+| downloadData.R           | any   | Download data from public datasets                    |
+| bulkRNAana_1_loadCount.R | RNA   | Load multiple results and convert to count Matrix     |
+| bulkRNAana_2a_DESeq.R    | RNA   | Perform DESeq analysis (for sample without replicate) |
+| bulkRNAana_2b_DESeq2.R   | RNA   | Perform DESeq2 analysis (for sample with replicates)  |
 
 - Visualization
+
+| file name                | omics | description                                    |
+| ------------------------ | ----- | ---------------------------------------------- |
+| Visulz_bulkRNA_PCA.R     | RNA   | PCA plot for bulkRNA samples                   |
+| Visulz_bulkRNA_MAplot.R  | RNA   | MA plot for DEGs between group of samples      |
+| Visulz_bulkRNA_volcano.R | RNA   | Volcano plot for DEGs between group of samples |
+| Visulz_bulkRNA_heatmap.R | RNA   | Heatmap for bulkRNA samples                    |
 
 ### Pipeline
 
