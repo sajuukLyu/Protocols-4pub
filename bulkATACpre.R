@@ -116,6 +116,7 @@ map_cmd <- glue(
 cat(map_cmd[1])
 
 setCMD(map_cmd, str_c("code/", map_dir), 1, T)
+# multiqc -o 4_map -f -n map 4_map/*.log
 
 # * * 2.5. Sort -----------------------------------------------------------
 
@@ -320,13 +321,13 @@ sample_name <- list.files(bw_dir, "-[123].bw") %>% str_replace(".bw$", "")
 group_name <- tapply(sample_name, str_sub(sample_name, 1, -3), c)
 
 mat_cmd <- glue(
-  "computeMatrix reference-point -a 2000 -b 2000 -p 20 -R {heat_dir}/gene.tss.bed -S \\
+  "computeMatrix reference-point -a 2000 -b 2000 -p 20 -R {heat_dir}/hg19geneTSS.bed -S \\
   {bws} -o {heat_dir}/TSS_mtx.gz &",
   bws = str_c(glue("{bw_dir}/{names(group_name)}.bw"), collapse = " \\\n"))
 cat(mat_cmd)
 
 heat_cmd <- glue(
-  "plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o TSS.heatmap.pdf \\
+  "plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o {heat_dir}/TSS.heatmap.pdf \\
   --outFileNameMatrix {heat_dir}/TSS_value.txt --outFileSortedRegions {heat_dir}/TSS_region.bed &")
 cat(heat_cmd)
 
