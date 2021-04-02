@@ -48,6 +48,6 @@ egoList <- map(geneList, ~ {
 })
 names(egoList)
 
-iwalk(egoList, ~ write.csv(.x@result, paste0(.y, ".GO.csv")))
+iwalk(egoList, ~ write.csv(.x@result, str_c(.y, ".GO.csv")))
 
 

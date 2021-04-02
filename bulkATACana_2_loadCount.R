@@ -49,3 +49,19 @@ dbaAll <- dba.contrast(dbaAll, minMembers = 2, categories = DBA_CONDITION)
 dbaAll <- dba.analyze(dbaAll, bBlacklist = F, bGreylist = F)
 
 saveRDS(dbaAll, "dbaAll.rds")
+
+diffList <- list()
+diffList$F_vs_P <- dba.report(dbaAll, contrast = 1)
+diffList$F_vs_XF <- dba.report(dbaAll, contrast = 2)
+diffList$XF_vs_P <- dba.report(dbaAll, contrast = 3)
+
+saveRDS(diffList, "diffList.rds")
+
+peakMeta <- as.data.table(dbaAll$peaks[[1]][, 1:3])
+
+saveRDS(peakMeta, "peakMeta.rds")
+
+peakMtx <- map(dbaAll$peaks, ~ {.x$Score}) %>% reduce(cbind) %>% set_colnames(dbaAll$samples$SampleID) %>% as.data.table()
+
+saveRDS(peakMtx, "peakMtx.rds")
+
