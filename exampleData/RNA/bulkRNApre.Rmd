@@ -1,15 +1,35 @@
+---
+title: "General bulk RNA-seq preprocess"
+author: "Yulin Lyu <lvyulin@pku.edu.cn>"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+    theme: lumen
+---
 
-# MESSAGE -----------------------------------------------------------------
-# 
-# author: Yulin Lyu
-# email: lvyulin@pku.edu.cn
-# 
-# require: R whatever
-# 
-# ---
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = F,
+  comment = ""
+)
+```
 
-# * 0. Setting ------------------------------------------------------------
+```{css, echo = FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
 
+pre[class] {
+  max-height: 200px;
+}
+```
+
+## Setting
+
+```{r}
 settingList <- list(
   workDir = ".",
   fastqcDir = "fastqc",
@@ -22,40 +42,48 @@ settingList <- list(
   countDir = "featureCounts",
   countAnno = "ref/genes.gtf"
 )
+```
 
-# * 1. Load packages ------------------------------------------------------
+## Load packages
 
+```{r eval = FALSE}
 setwd(settingList$workDir)
 
 library(tidyverse)
 library(magrittr)
 library(glue)
+```
 
-# * 2. Preprocess ---------------------------------------------------------
+## Rename files used
 
-setwd("0_fastq")
+```{r eval = FALSE}
+# setwd("0_fastq")
+# 
+# list.files(".")
+# 
+# from_file <- list.files(".", "")
+# to_file <- gsub("", "", from_file)
+# 
+# file.rename(from_file, to_file)
+# 
+# setwd("..")
+```
 
-list.files(".")
+## Load data
 
-from_file <- list.files(".", "")
-to_file <- gsub("", "", from_file)
-
-file.rename(from_file, to_file)
-
-setwd("..")
-
-# * * 2.0. Load data ------------------------------------------------------
-
+```{r}
 file_name <- list.files("0_fastq", ".gz")
-file_name <- list.files("2_trim", ".gz") # after qc
 
 R1 <- grep("_1\\.", file_name, value = T)
 R2 <- grep("_2\\.", file_name, value = T)
 
 sample_name <- gsub("_1\\..*", "", R1)
+sample_name
+```
 
-# * * 2.1. QC for raw data ------------------------------------------------
+## QC for raw data
 
+```{r eval = FALSE}
 dir.create("code")
 
 qc_dir <- "1_qc"
@@ -67,10 +95,28 @@ qc_cmd <- glue("{qc} -o {qc_dir} -t 8 0_fastq/{file_name} &")
 cat(qc_cmd[1])
 
 write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
-# multiqc -o 1_qc -f -n qc.raw 1_qc/*.zip
+```
 
-# * * 2.2. Trim -----------------------------------------------------------
+```{bash}
+cat code/1_qc.sh
+```
 
+After all fastqc tasks done, we can combine all the results using multiqc.
+
+```{bash eval = FALSE}
+multiqc -o 1_qc -f -n qc.raw 1_qc/*.zip
+```
+
+We can open the .html report `1_qc/qc.raw.html` to check the QC metrics got by `fastqc`.
+As we can see, there are some adapters remaining in these files.
+
+![](qc/rawQC.svg){width="80%"}
+
+So trimming is needed in most cases.
+
+## Trim adapters
+
+```{r eval = FALSE}
 dir.create("2_trim")
 dir.create(".2_untrim")
 
@@ -91,24 +137,56 @@ cat(trim_cmd[1])
 trim_dir <- "2_trim"
 trim_dir %>% str_c("code/", .) %>% dir.create()
 
-setCMD(trim_cmd, str_c("code/", trim_dir), 1, F)
-# multiqc -o 2_trim -f -n trim 2_trim/*.log
+setCMD(trim_cmd, str_c("code/", trim_dir), 7, F)
+```
 
-# * * 2.3. QC for trimmed data --------------------------------------------
+Here [this function](#Function) is needed to dispatch multiple commands to some batched scripts.
 
-# reload trimmed data first
+```{bash}
+ls code/2_trim
+```
 
+The `submit.sh` is used to run these batched scripts at the same time.
+After all trimming tasks done, we can combine all the results using multiqc.
+
+```{bash eval = FALSE}
+multiqc -o 2_trim -f -n trim 2_trim/*.log
+```
+
+![](qc/trim.svg){width="80%"}
+
+Very few reads are dropped after trimming, that's pretty good.
+
+## QC for trimmed data
+
+```{r eval = FALSE}
 qc_dir <- "3_qc"
 qc_dir %>% dir.create()
 
+file_name <- list.files("2_trim", ".gz")
 qc_cmd <- glue("{qc} -o {qc_dir} -t 8 {trim_dir}/{file_name} &")
 cat(qc_cmd[1])
 
 write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
-# multiqc -o 3_qc -f -n qc.trim 3_qc/*.zip
+```
 
-# * * 2.4. Map ------------------------------------------------------------
+```{bash}
+cat code/3_qc.sh
+```
 
+After all fastqc tasks done, we can combine all the results using multiqc.
+
+```{bash eval = FALSE}
+multiqc -o 3_qc -f -n qc.trim 3_qc/*.zip
+```
+
+![](qc/trimQC.png){width="80%"}
+
+There is almost no adapters remaining after trimming, just as we expected.
+
+## Map to reference genome
+
+```{r eval = FALSE}
 star <- settingList$starDir
 ref <- settingList$mapRef
 
@@ -124,11 +202,24 @@ map_cmd <- glue(
   --outFilterIntronMotifs RemoveNoncanonical")
 cat(map_cmd[1])
 
-setCMD(map_cmd, str_c("code/", map_dir), 1, T)
-# multiqc -o 4_map -f -n map 4_map/*.out
+setCMD(map_cmd, str_c("code/", map_dir), 7, F)
+```
 
-# * * 2.5. Infer ----------------------------------------------------------
+After all mapping tasks done, we can combine all the results using multiqc.
 
+```{bash eval = FALSE}
+multiqc -o 4_map -f -n map 4_map/*.out
+```
+
+![](qc/map.svg){width="80%"}
+
+The mapping rates of samples are very high.
+
+## Infer experiment
+
+Here we use [RSeQC](http://rseqc.sourceforge.net/#infer-experiment-py) to infer whether the RNA-seq sequencing are strand-specific.
+
+```{r eval = FALSE}
 infer_path <- settingList$inferDir
 gene_bed <- settingList$inferGene
 
@@ -139,9 +230,17 @@ infer_cmd <- glue("{infer_path} -r {gene_bed} -i {map_dir}/{sample_name}Aligned.
 cat(infer_cmd[1])
 
 write.table(c("#!/bin/bash\n", infer_cmd), glue("code/{infer_dir}.sh"), quote = F, row.names = F, col.names = F)
+```
 
-# * * 2.6. Count ----------------------------------------------------------
+```{bash}
+cat 5_infer/*
+```
 
+We can see `Fraction of reads explained by "1++,1--,2+-,2-+"` and `Fraction of reads explained by "1+-,1-+,2++,2--"` are close, indicating these sequcing are non strand-specific.
+
+## Count features
+
+```{r eval = FALSE}
 count_path <- settingList$countDir
 gtf <- settingList$countAnno
 
@@ -155,10 +254,24 @@ count_cmd <- glue(
 cat(count_cmd)
 
 write.table(c("#!/bin/bash\n", count_cmd), glue("code/{count_dir}.sh"), quote = F, row.names = F, col.names = F)
-# multiqc -o 6_count -f -n count 6_count
+```
 
-# * 3. Function -----------------------------------------------------------
+After counting is done, we can combine all the results using multiqc.
 
+```{bash eval = FALSE}
+multiqc -o 6_count -f -n count 6_count
+```
+
+![](qc/count.svg){width="80%"}
+
+The rates of assigned features are very high.
+
+## Function {#Function}
+
+This function is designed to dispatch multiple tasks to batched scripts.
+By turning the option `clu` to `TRUE` we can create scripts used in high performance computer cluster.
+
+```{r eval = FALSE}
 setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
   cmd %>% tapply(seq_along(.) %% sepN, c) %>% imap(~ {
     ifelse(clu, glue(
@@ -182,4 +295,8 @@ setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
     c("#!/bin/bash", .) %>% as_tibble() %>%
     write_delim(glue("{dir}/submit.sh"), "\n", col_names = F)
 }
+```
 
+```{r}
+sessionInfo()
+```
