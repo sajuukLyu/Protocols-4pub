@@ -6,6 +6,8 @@
 
 Multi-omics analysis protocols concluded by Yulin Lyu (Cheng Li Lab, Peking University, <lvyulin@pku.edu.cn>).
 
+Integrated step-by-step vignettes present on the [wiki](https://github.com/sajuukLyu/Protocols-4pub/wiki).
+
 These files including three main parts:
 
 - **Preprocess pipeline** (*etc. bulkRNA, bulkATAC, ChIP, WGBS ...*)
