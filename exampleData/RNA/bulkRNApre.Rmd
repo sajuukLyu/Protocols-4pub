@@ -20,6 +20,7 @@ knitr::opts_chunk$set(
 pre {
   max-height: 300px;
   overflow-y: auto;
+  background-color: AliceBlue;
 }
 
 pre[class] {
@@ -46,7 +47,7 @@ settingList <- list(
 
 ## Load packages
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 setwd(settingList$workDir)
 
 library(tidyverse)
@@ -56,7 +57,7 @@ library(glue)
 
 ## Rename files used
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # setwd("0_fastq")
 # 
 # list.files(".")
@@ -83,7 +84,7 @@ sample_name
 
 ## QC for raw data
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 dir.create("code")
 
 qc_dir <- "1_qc"
@@ -103,7 +104,7 @@ cat code/1_qc.sh
 
 After all fastqc tasks done, we can combine all the results using multiqc.
 
-```{bash eval = FALSE}
+```{bash, eval = FALSE}
 multiqc -o 1_qc -f -n qc.raw 1_qc/*.zip
 ```
 
@@ -116,7 +117,7 @@ So trimming is needed in most cases.
 
 ## Trim adapters
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 dir.create("2_trim")
 dir.create(".2_untrim")
 
@@ -149,7 +150,7 @@ ls code/2_trim
 The `submit.sh` is used to run these batched scripts at the same time.
 After all trimming tasks done, we can combine all the results using multiqc.
 
-```{bash eval = FALSE}
+```{bash, eval = FALSE}
 multiqc -o 2_trim -f -n trim 2_trim/*.log
 ```
 
@@ -159,7 +160,7 @@ Very few reads are dropped after trimming, that's pretty good.
 
 ## QC for trimmed data
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 qc_dir <- "3_qc"
 qc_dir %>% dir.create()
 
@@ -176,7 +177,7 @@ cat code/3_qc.sh
 
 After all fastqc tasks done, we can combine all the results using multiqc.
 
-```{bash eval = FALSE}
+```{bash, eval = FALSE}
 multiqc -o 3_qc -f -n qc.trim 3_qc/*.zip
 ```
 
@@ -186,7 +187,7 @@ There is almost no adapters remaining after trimming, just as we expected.
 
 ## Map to reference genome
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 star <- settingList$starDir
 ref <- settingList$mapRef
 
@@ -207,7 +208,7 @@ setCMD(map_cmd, str_c("code/", map_dir), 7, F)
 
 After all mapping tasks done, we can combine all the results using multiqc.
 
-```{bash eval = FALSE}
+```{bash, eval = FALSE}
 multiqc -o 4_map -f -n map 4_map/*.out
 ```
 
@@ -219,7 +220,7 @@ The mapping rates of samples are very high.
 
 Here we use [RSeQC](http://rseqc.sourceforge.net/#infer-experiment-py) to infer whether the RNA-seq sequencing are strand-specific.
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 infer_path <- settingList$inferDir
 gene_bed <- settingList$inferGene
 
@@ -240,7 +241,7 @@ We can see `Fraction of reads explained by "1++,1--,2+-,2-+"` and `Fraction of r
 
 ## Count features
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 count_path <- settingList$countDir
 gtf <- settingList$countAnno
 
@@ -258,7 +259,7 @@ write.table(c("#!/bin/bash\n", count_cmd), glue("code/{count_dir}.sh"), quote = 
 
 After counting is done, we can combine all the results using multiqc.
 
-```{bash eval = FALSE}
+```{bash, eval = FALSE}
 multiqc -o 6_count -f -n count 6_count
 ```
 
@@ -271,7 +272,7 @@ The rates of assigned features are very high.
 This function is designed to dispatch multiple tasks to batched scripts.
 By turning the option `clu` to `TRUE` we can create scripts used in high performance computer cluster.
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
   cmd %>% tapply(seq_along(.) %% sepN, c) %>% imap(~ {
     ifelse(clu, glue(
