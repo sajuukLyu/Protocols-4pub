@@ -38,3 +38,6 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# some big files
+exampleData/ATAC/motif/allPeak.txt

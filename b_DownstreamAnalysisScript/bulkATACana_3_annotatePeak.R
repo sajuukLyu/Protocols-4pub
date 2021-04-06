@@ -29,9 +29,15 @@ txdb <- makeTxDbFromGFF("../../data/hg19genes.gtf")
 peakMeta <- readRDS("peakMeta.rds")
 peakMeta[, id := paste(Chr, Start, End, sep = "_")][]
 
+peakGroup <- readRDS("peakGroup.rds")
 peakIndex <- map(peakGroup, ~ {match(.x, peakMeta$id)})
 
 # * 3. Analyze ------------------------------------------------------------
+
+homerPeak <- peakMeta
+homerPeak[, Chr := str_c("chr", Chr)][]
+
+fwrite(homerPeak, "allPeak.homer", sep = "\t", col.names = F)
 
 peakGRlist <- map(peakIndex, ~ {
   GRanges(

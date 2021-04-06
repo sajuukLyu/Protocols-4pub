@@ -33,6 +33,8 @@ library(patchwork)
 
 GOfile <- list.files(".", "GO.csv")
 
+# * 3. Plot ---------------------------------------------------------------
+
 GOdata <- map(GOfile, ~ fread(.x)) %>% set_names(str_remove(GOfile, ".GO.*"))
 plotData <- GOdata %>% imap(~ {.x[pvalue < 0.05 & Count >= 5][1:20][, type := .y]})
 plotData %<>% map(~ {.x[, p := -log10(pvalue)]})
