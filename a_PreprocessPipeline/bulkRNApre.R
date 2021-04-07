@@ -14,7 +14,7 @@ settingList <- list(
   workDir = ".",
   fastqcDir = "fastqc",
   trimmomaticDir = "app/Trimmomatic-0.39/trimmomatic-0.39.jar",
-  trimAdapter = "app/Trimmomatic-0.39/TruSeq3-PE-2.fa",
+  trimAdapter = "app/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa",
   starDir = "STAR",
   mapRef = "ref/hg19-STAR-cr3",
   inferDir = "app/anaconda3/envs/lvylenv/bin/infer_experiment.py",

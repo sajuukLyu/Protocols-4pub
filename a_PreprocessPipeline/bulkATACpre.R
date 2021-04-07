@@ -12,12 +12,21 @@
 
 settingList <- list(
   workDir = ".",
-  trimmomaticDir = "app/Trimmomatic-0.39",
-  trimAdapter = "NexteraPE-PE.fa",
+  fastqcDir = "fastqc",
+  trimmomaticDir = "app/Trimmomatic-0.39/trimmomatic-0.39.jar",
+  trimAdapter = "app/Trimmomatic-0.39/adapters/NexteraPE-PE.fa",
+  bt2Dir = "bowtie2",
   mapRef = "fasta/genome",
+  stDir = "samtools",
   picardDir = "app/picard.jar",
+  bedtDir = "bedtools",
+  macs2Dir = "macs2",
+  dtDir = "",
   bdg2bwDir = "app/bedGraphToBigWig",
-  refLen = "fasta/genome.fa.fai"
+  refLen = "fasta/genome.fa.fai",
+  idrDir = "idr",
+  homerDir = "",
+  knownMotif = "app/homer/data/knownTFs/vertebrates/known.motifs"
 )
 
 # * 1. Load packages ------------------------------------------------------
@@ -58,7 +67,9 @@ dir.create("code")
 qc_dir <- "1_qc"
 qc_dir %>% dir.create()
 
-qc_cmd <- glue("fastqc -o {qc_dir} -t 8 0_fastq/{file_name} &")
+qc <- settingList$fastqcDir
+
+qc_cmd <- glue("{qc} -o {qc_dir} -t 8 0_fastq/{file_name} &")
 cat(qc_cmd[1])
 
 write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
@@ -73,13 +84,13 @@ trim <- settingList$trimmomaticDir
 adapter <- settingList$trimAdapter
 
 trim_cmd <- glue(
-  "java -jar {trim}/trimmomatic-0.39.jar PE -threads 10 \\
+  "java -jar {trim} PE -threads 10 \\
   0_fastq/{R1} 0_fastq/{R2} \\
   2_trim/{sample_name}_1.trim.fastq.gz \\
   .2_untrim/{sample_name}_1.untrim.fastq.gz \\
   2_trim/{sample_name}_2.trim.fastq.gz \\
   .2_untrim/{sample_name}_2.untrim.fastq.gz \\
-  ILLUMINACLIP:{trim}/adapters/{adapter}:2:30:7:1:true \\
+  ILLUMINACLIP:{adapter}:2:30:7:1:true \\
   LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 > 2_trim/{sample_name}.trim.log 2>&1")
 cat(trim_cmd[1])
 
@@ -104,13 +115,14 @@ write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row
 
 # * * 2.4. Map ------------------------------------------------------------
 
+bt2 <- settingList$bt2Dir
 ref <- settingList$mapRef
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
 map_cmd <- glue(
-  "bowtie2 -p 20 --very-sensitive -X 2000 -x {ref} \\
+  "{bt2} -p 20 --very-sensitive -X 2000 -x {ref} \\
   -1 {trim_dir}/{R1} -2 {trim_dir}/{R2} \\
   -S {map_dir}/{sample_name}.sam > {map_dir}/{sample_name}.log 2>&1")
 cat(map_cmd[1])
@@ -120,12 +132,14 @@ setCMD(map_cmd, str_c("code/", map_dir), 1, T)
 
 # * * 2.5. Sort -----------------------------------------------------------
 
+st <- settingList$stDir
+
 sort_dir <- "5_sort"
 sort_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
 sort_cmd <- glue(
-  "samtools view -@ 10 -bS {map_dir}/{sample_name}.sam | \\
-  samtools sort -@ 10 > {sort_dir}/{sample_name}.bam")
+  "{st} view -@ 10 -bS {map_dir}/{sample_name}.sam | \\
+  {st} sort -@ 10 > {sort_dir}/{sample_name}.bam")
 cat(sort_cmd[1])
 
 setCMD(sort_cmd, str_c("code/", sort_dir), 1, T)
@@ -153,8 +167,8 @@ fil_dir <- "7_filter"
 fil_dir %>% dir.create()
 
 filter_cmd <- glue(
-  "samtools view -h -f 2 -q 30 {dedup_dir}/{sample_name}.dedup.bam | \\
-  egrep -v '\\bMT|\\bGL|\\bJH' | samtools sort -@ 4 -O bam > {fil_dir}/{sample_name}.filter.bam &")
+  "{st} view -h -f 2 -q 30 {dedup_dir}/{sample_name}.dedup.bam | \\
+  egrep -v '\\bMT|\\bGL|\\bJH' | {st} sort -@ 4 -O bam > {fil_dir}/{sample_name}.filter.bam &")
 cat(filter_cmd[1])
 
 write.table(c("#!/bin/bash\n", filter_cmd), glue("code/{fil_dir}.sh"), quote = F, row.names = F, col.names = F)
@@ -177,11 +191,13 @@ write.table(c("#!/bin/bash\n", ins_cmd), glue("code/{ins_dir}.sh"), quote = F, r
 
 # * * 2.9. Shift ----------------------------------------------------------
 
+bedt <- settingList$bedtDir
+
 shift_dir <- "9_shift"
 shift_dir %>% dir.create()
 
 shift_cmd <- glue(
-  "bedtools bamtobed -i {fil_dir}/{sample_name}.filter.bam | {awk_cmd} \\
+  "{bedt} bamtobed -i {fil_dir}/{sample_name}.filter.bam | {awk_cmd} \\
   > {shift_dir}/{sample_name}.shift.bed &",
   awk_cmd = "awk -F '\\t' 'BEGIN {OFS = FS}{ if ($6 == \"+\") {$2 = $2 + 4} else if ($6 == \"-\") {$3 = $3 - 5} print $0}'")
 cat(shift_cmd[1])
@@ -190,6 +206,8 @@ write.table(c("#!/bin/bash\n", shift_cmd), glue("code/{shift_dir}.sh"), quote = 
 
 # * * 2.10. Peak ----------------------------------------------------------
 
+macs2 <- settingList$macs2Dir
+
 peak_dir <- "10_peak"
 peak_dir %>% dir.create()
 
@@ -197,7 +215,7 @@ org <- "hs"
 org <- "mm"
 
 peak_cmd <- glue("
-  macs2 callpeak -t {shift_dir}/{sample_name}.shift.bed \\
+  {macs2} callpeak -t {shift_dir}/{sample_name}.shift.bed \\
   -g {org} --nomodel --shift -100 --extsize 200 --keep-dup all -n {sample_name} \\
   -B --outdir {peak_dir} > {peak_dir}/{sample_name}.log 2>&1 &")
 cat(peak_cmd[1])
@@ -205,7 +223,7 @@ cat(peak_cmd[1])
 group_name <- tapply(sample_name, str_sub(sample_name, 1, -3), c)
 
 group_peak_cmd <- glue(
-  "macs2 callpeak -t {peak_group} \\
+  "{macs2} callpeak -t {peak_group} \\
   -g {org} --nomodel --shift -100 --extsize 200 --keep-dup all --SPMR -n group_{group} \\
   -B --outdir {peak_dir} > {peak_dir}/group_{group}.log 2>&1 &",
   peak_group = map_chr(group_name, ~ paste(glue("{shift_dir}/{.x}.shift.bed"), collapse = " ")),
@@ -220,14 +238,15 @@ write.table(c("#!/bin/bash\n", group_peak_cmd), glue("code/{peak_dir}_group.sh")
 bw_dir <- "11_bw"
 bw_dir %>% dir.create()
 
+dt <- settingList$dtDir
 bdg2bw <- settingList$bdg2bwDir
 ref_len <- settingList$refLen
 
-index_cmd <- glue("samtools index {fil_dir}/{sample_name}.filter.bam &")
+index_cmd <- glue("{st} index {fil_dir}/{sample_name}.filter.bam &")
 cat(index_cmd[1])
 
 bw_cmd <- glue("
-  bamCoverage --normalizeUsing RPKM -of bigwig -b {fil_dir}/{sample_name}.filter.bam \\
+  {dt}bamCoverage --normalizeUsing RPKM -of bigwig -b {fil_dir}/{sample_name}.filter.bam \\
   -o {bw_dir}/{sample_name}.bw &")
 cat(bw_cmd[1])
 
@@ -240,21 +259,21 @@ sample_name <- list.files(bw_dir, "-[0-9].bw") %>% str_replace(".bw$", "")
 group_name <- tapply(sample_name, str_sub(sample_name, 1, -3), c)
 
 cor_cmd <- glue(
-  "multiBigwigSummary bins -p 20 -b {bws} -o {bw_dir}/bw_cor.npz &",
+  "{dt}multiBigwigSummary bins -p 20 -b {bws} -o {bw_dir}/bw_cor.npz &",
   bws = str_c(glue("{bw_dir}/{sample_name}.bw"), collapse = " \\\n"))
 cat(cor_cmd)
 
 group_cor_cmd <- glue(
-  "multiBigwigSummary bins -p 20 -b {group_bws} -o {bw_dir}/group_bw_cor.npz &",
+  "{dt}multiBigwigSummary bins -p 20 -b {group_bws} -o {bw_dir}/group_bw_cor.npz &",
   group_bws = str_c(glue("{bw_dir}/{names(group_name)}.bw"), collapse = " \\\n"))
 cat(group_cor_cmd)
 
 corplot_cmd <- glue(
-  "plotCorrelation -in {bw_dir}/bw_cor.npz -c pearson -p heatmap --plotNumbers -o {bw_dir}/cor_heatmap.pdf --colorMap RdBu_r &")
+  "{dt}plotCorrelation -in {bw_dir}/bw_cor.npz -c pearson -p heatmap --plotNumbers -o {bw_dir}/cor_heatmap.pdf --colorMap RdBu_r &")
 cat(corplot_cmd)
 
 group_corplot_cmd <- glue(
-  "plotCorrelation -in {bw_dir}/group_bw_cor.npz -c pearson -p heatmap --plotNumbers -o {bw_dir}/group_cor_heatmap.pdf --colorMap RdBu_r &")
+  "{dt}plotCorrelation -in {bw_dir}/group_bw_cor.npz -c pearson -p heatmap --plotNumbers -o {bw_dir}/group_cor_heatmap.pdf --colorMap RdBu_r &")
 cat(group_corplot_cmd)
 
 write.table(c("#!/bin/bash\n", index_cmd), glue("code/{bw_dir}_index.sh"), quote = F, row.names = F, col.names = F)
@@ -271,8 +290,10 @@ write.table(c("#!/bin/bash\n", group_corplot_cmd), glue("code/{bw_dir}_plot_cor_
 idr_dir <- "12_idr"
 idr_dir %>% dir.create()
 
+idr <- settingList$idrDir
+
 idr_cmd <- map(group_name, ~ as_tibble(combn(.x, 2)) %>% map(~ paste(glue("{peak_dir}/{.x}_peaks.narrowPeak"), collapse = " "))) %>% 
-  imap(~ glue("idr --samples {.x} --peak-list {peak_dir}/group_{.y}_peaks.narrowPeak \\
+  imap(~ glue("{idr} --samples {.x} --peak-list {peak_dir}/group_{.y}_peaks.narrowPeak \\
               --input-file-type narrowPeak --output-file {idr_dir}/{.y}")) %>% 
   map(~ imap(.x, ~ glue("{.x}-{.y}.idr.narrowPeak &"))) %>% unlist() %>% unname()
 cat(idr_cmd[1])
@@ -280,20 +301,20 @@ cat(idr_cmd[1])
 write.table(c("#!/bin/bash\n", idr_cmd), glue("code/{idr_dir}.sh"), quote = F, row.names = F, col.names = F)
 
 group_index <- map(group_name, ~ choose(length(.x), 2)) %>% imap(~ rep(.y, .x)) %>% unlist() %>% unname()
-idrFile <- list.files(idr_dir, "idr", full.names = T)
-idrData <- map(idrFile, ~ read_delim(.x, "\t", col_names = F))
-idrPeak <- map(idrData, ~ .x[.x[[5]] > 540, ]) %>%
+idr_file <- list.files(idr_dir, "idr", full.names = T)
+idr_data <- map(idr_file, ~ read_delim(.x, "\t", col_names = F))
+idr_peak <- map(idr_data, ~ .x[.x[[5]] > 540, ]) %>%
   map(~ str_c(.x[[1]], .x[[2]], .x[[3]], sep = "_")) %>%
   tapply(group_index, c) %>%
   map(~ unlist(.x) %>% unique)
 
-groupFile <- list.files(peak_dir, "^group.*Peak", full.names = T)
-groupData <- map(groupFile, ~ read.table(.x, sep = "\t", stringsAsFactors = F))
-groupPeak <- map(groupData, ~ str_c(.x[[1]], .x[[2]], .x[[3]], sep = "_"))
+group_file <- list.files(peak_dir, "^group.*Peak", full.names = T)
+group_data <- map(group_file, ~ read.table(.x, sep = "\t", stringsAsFactors = F))
+group_peak <- map(group_data, ~ str_c(.x[[1]], .x[[2]], .x[[3]], sep = "_"))
 
-groupData <- pmap(list(idrPeak, groupPeak, groupData), function(a, b, c) {c[b %in% a, ]})
+groupData <- pmap(list(idr_peak, group_peak, group_data), function(a, b, c) {c[b %in% a, ]})
 
-iwalk(groupData, ~ write.table(.x, glue("{idr_dir}/{.y}.narrowPeak"), col.names = F, row.names = F, quote = F, sep = "\t"))
+iwalk(group_data, ~ write.table(.x, glue("{idr_dir}/{.y}.narrowPeak"), col.names = F, row.names = F, quote = F, sep = "\t"))
 
 # * * 2.13. Motif ---------------------------------------------------------
 
@@ -301,11 +322,13 @@ motif_dir <- "13_motif"
 motif_dir %>% dir.create()
 region_file <- list.files(motif_dir, "bed")
 
+homer <- settingList$homerDir
+
 org <- "hg19"
 org <- "mm10"
 
 motif_cmd <- glue(
-  "findMotifsGenome.pl {motif_dir}/{region_file} {org} {motif_dir}/{rigion_name} \\
+  "{homer}findMotifsGenome.pl {motif_dir}/{region_file} {org} {motif_dir}/{rigion_name} \\
   -size 200 -len 8,10,12 > {region_file}/{region_name}.log 2>&1 &",
   region_name = str_replace(region_file, ".bed", ""))
 cat(motif_cmd[1])
@@ -321,18 +344,35 @@ sample_name <- list.files(bw_dir, "-[123].bw") %>% str_replace(".bw$", "")
 group_name <- tapply(sample_name, str_sub(sample_name, 1, -3), c)
 
 mat_cmd <- glue(
-  "computeMatrix reference-point -a 2000 -b 2000 -p 20 -R {heat_dir}/hg19geneTSS.bed -S \\
+  "{dt}computeMatrix reference-point -a 2000 -b 2000 -p 20 -R {heat_dir}/hg19geneTSS.bed -S \\
   {bws} -o {heat_dir}/TSS_mtx.gz &",
   bws = str_c(glue("{bw_dir}/{names(group_name)}.bw"), collapse = " \\\n"))
 cat(mat_cmd)
 
 heat_cmd <- glue(
-  "plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o {heat_dir}/TSS.heatmap.pdf \\
+  "{dt}plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o {heat_dir}/TSS.heatmap.pdf \\
   --outFileNameMatrix {heat_dir}/TSS_value.txt --outFileSortedRegions {heat_dir}/TSS_region.bed &")
 cat(heat_cmd)
 
 write.table(c("#!/bin/bash\n", mat_cmd), glue("code/{heat_dir}_mtx.sh"), quote = F, row.names = F, col.names = F)
 write.table(c("#!/bin/bash\n", heat_cmd), glue("code/{heat_dir}.sh"), quote = F, row.names = F, col.names = F)
+
+# * * 2.15. Anno ----------------------------------------------------------
+
+anno_dir <- "15_anno"
+anno_dir %>% dir.create()
+
+known_motif <- settingList$knownMotif
+
+peak_file <- list.files(anno_dir, ".homer")
+
+anno_cmd <- glue(
+  "{homer}annotatePeaks.pl {anno_dir}/{peak_file} {org} -m {known_motif} -mscore > {anno_dir}/{peak_name}.txt &",
+  peak_name = str_remove(peak_file, ".homer")
+)
+cat(anno_cmd)
+
+write.table(c("#!/bin/bash\n", anno_cmd), glue("code/{anno_dir}.sh"), quote = F, row.names = F, col.names = F)
 
 # * 3. Function -----------------------------------------------------------
 
