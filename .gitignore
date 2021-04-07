@@ -41,3 +41,4 @@ vignettes/*.pdf
 
 # some big files
 exampleData/ATAC/motif/allPeak.txt
+exampleData/ATAC/peak/peak_value.txt

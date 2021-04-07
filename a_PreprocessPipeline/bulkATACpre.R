@@ -343,6 +343,7 @@ heat_dir %>% dir.create()
 sample_name <- list.files(bw_dir, "-[123].bw") %>% str_replace(".bw$", "")
 group_name <- tapply(sample_name, str_sub(sample_name, 1, -3), c)
 
+# for global
 mat_cmd <- glue(
   "{dt}computeMatrix reference-point -a 2000 -b 2000 -p 20 -R {heat_dir}/hg19geneTSS.bed -S \\
   {bws} -o {heat_dir}/TSS_mtx.gz &",
@@ -350,8 +351,23 @@ mat_cmd <- glue(
 cat(mat_cmd)
 
 heat_cmd <- glue(
-  "{dt}plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o {heat_dir}/TSS.heatmap.pdf \\
+  "{dt}plotHeatmap -m {heat_dir}/TSS_mtx.gz --colorMap RdBu_r -o {heat_dir}/TSS_heatmap.pdf \\
   --outFileNameMatrix {heat_dir}/TSS_value.txt --outFileSortedRegions {heat_dir}/TSS_region.bed &")
+cat(heat_cmd)
+
+peak_group <- list.files(heat_dir, "peakGroup", full.names = T)
+
+# for peaks
+mat_cmd <- glue(
+  "{dt}computeMatrix scale-regions -a 1000 -b 1000 -p 20 -R {peak} -S \\
+  {bws} -o {heat_dir}/peak_mtx.gz &",
+  peak = str_c(peak_group, collapse = " "),
+  bws = str_c(glue("{bw_dir}/{names(group_name)}.bw"), collapse = " \\\n"))
+cat(mat_cmd)
+
+heat_cmd <- glue(
+  "{dt}plotHeatmap -m {heat_dir}/peak_mtx.gz --colorMap RdBu_r -o {heat_dir}/peak_heatmap.pdf \\
+  --outFileNameMatrix {heat_dir}/peak_value.txt --outFileSortedRegions {heat_dir}/peak_region.bed &")
 cat(heat_cmd)
 
 write.table(c("#!/bin/bash\n", mat_cmd), glue("code/{heat_dir}_mtx.sh"), quote = F, row.names = F, col.names = F)
