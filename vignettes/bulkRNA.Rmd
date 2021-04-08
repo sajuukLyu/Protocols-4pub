@@ -338,7 +338,7 @@ Perform DEG test using `nbinomTest` if there is no other choice.
 
 ### {-}
 
-### 3. Plot samples and DEGs
+### 3. Ploting samples and DEGs
 
 We can perform PCA and visualize the results.
 
