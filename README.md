@@ -2,9 +2,15 @@
 
 ## *Reusable code collection*
 
-##### 7 April, 2021
+##### 26 April, 2021
 
 Multi-omics analysis protocols concluded by Yulin Lyu (Cheng Li Lab, Peking University, <lvyulin@pku.edu.cn>).
+
+---
+
+*声明：该项目仅供学习用途，请共同遵守[开源协议](https://github.com/sajuukLyu/Protocols-4pub/blob/main/LICENSE)，禁止用于商业盈利。未经作者同意请勿转载至其它媒体。*
+
+---
 
 Integrated step-by-step vignettes present on the [wiki](https://github.com/sajuukLyu/Protocols-4pub/wiki).
 
