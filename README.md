@@ -4,7 +4,7 @@
 
 ##### 26 April, 2021
 
-Multi-omics analysis protocols concluded by Yulin Lyu (Cheng Li Lab, Peking University, <lvyulin@pku.edu.cn>).
+Multi-omics analysis protocols concluded by SajuukLyu <lvyulin@pku.edu.cn>.
 
 ---
 
