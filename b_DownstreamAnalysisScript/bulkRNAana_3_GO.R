@@ -8,7 +8,7 @@
 #
 # ---
 
-# * 1. Load packages ------------------------------------------------------
+# 1. Load packages --------------------------------------------------------
 
 setwd("exampleData/RNA")
 
@@ -23,16 +23,18 @@ library(DESeq2)
 library(org.Hs.eg.db)
 library(clusterProfiler)
 
-# * 2. Load data ----------------------------------------------------------
+# 2. Load data ------------------------------------------------------------
 
 anno <- readRDS("../../data/hg19anno.rds")
 
-diffData <- fread("DESeq2/XF_vs_F.DEG.csv")
-colnames(diffData)[1] <- "gene"
+diffList <- list(
+  hCiPSC_vs_Fib = fread("middata/1a_DESeq2/hCiPSC_vs_Fib.DEG.csv"),
+  ES_vs_Fib = fread("middata/1a_DESeq2/ES_vs_Fib.DEG.csv")
+)
+diffList <- map(diffList, ~ {colnames(.x)[1] <- "gene"; .x})
+diffList <- map(diffList, ~ .x[is.na(padj), padj := 1])
 
-diffData[is.na(padj), padj := 1][]
-
-# * 3. Analyze ------------------------------------------------------------
+# 3. Analyze ------------------------------------------------------------==
 
 diffData[, type := "ns"][]
 diffData[log2FoldChange > 1 & padj < 0.05, type := "up"][log2FoldChange < -1 & padj < 0.05, type := "down"][]
