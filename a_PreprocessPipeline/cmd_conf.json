@@ -1,0 +1,6 @@
+{
+  "head": "#!/bin/bash",
+  "prefix": "sh",
+  "suffix": "&"
+}
+

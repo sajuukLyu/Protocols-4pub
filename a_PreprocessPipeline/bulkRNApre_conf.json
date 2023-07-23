@@ -1,0 +1,12 @@
+{
+  "workDir": ["."],
+  "fastqcDir": ["fastqc"],
+  "trimmomaticDir": ["Trimmomatic-0.39/trimmomatic-0.39.jar"],
+  "trimAdapter": ["Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa"],
+  "starDir": ["STAR"],
+  "mapRef": ["ref/hg19-STAR-cr3"],
+  "inferDir": ["infer_experiment.py"],
+  "inferGene": ["ref/hg19ensGene.clear.bed"],
+  "countDir": ["featureCounts"],
+  "countAnno": ["ref/genes.gtf"]
+}
