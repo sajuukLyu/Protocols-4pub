@@ -8,7 +8,7 @@
 #
 # ---
 
-# * 1. Load packages ------------------------------------------------------
+# 1. Load packages --------------------------------------------------------
 
 setwd("exampleData/RNA")
 
@@ -28,20 +28,19 @@ library(ggsci)
 library(scales)
 library(latex2exp)
 
-# * 2. Load data ----------------------------------------------------------
+# 2. Load data ------------------------------------------------------------
 
-diffData <- fread("DESeq2/XF_vs_F.DEG.csv")
+diffData <- fread("mid/ES_vs_Fib.DEG.csv")
 colnames(diffData)[1] <- "gene"
 
 diffData[is.na(padj), padj := 1][]
+diffData[, p := -log10(padj)][]
 diffData[, baseMean := log2(baseMean)][]
 
-# * 3. Plot ---------------------------------------------------------------
-
-dir.create("graphics")
+# 3. Plot -----------------------------------------------------------------
 
 diffData[, type := "ns"][]
-diffData[log2FoldChange > 1 & padj < 0.05, type := "up"][log2FoldChange < -1 & padj < 0.05, type := "down"][]
+diffData[log2FoldChange > 3 & padj < 0.05, type := "up"][log2FoldChange < -3 & padj < 0.05, type := "down"][]
 
 labelGene <- diffData[order(p, decreasing = T)][type == "up"][1:10]
 
@@ -53,10 +52,14 @@ typeColor <- structure(
 
 ggplot(diffData, aes(x = baseMean, y = log2FoldChange)) +
   geom_point(aes(color = type, size = p), show.legend = F) +
+  geom_hline(yintercept = 0, color = "black") +
+  geom_hline(yintercept = 3, color = "gray60", linetype = "dashed") +
+  geom_hline(yintercept = -3, color = "gray60", linetype = "dashed") +
   geom_text_repel(
     data = labelGene, aes(label = gene),
     size = 3, fontface = 3,
-    nudge_x = .5, nudge_y = .5) +
+    nudge_x = .5, nudge_y = .5,
+    max.overlaps = 100) +
   scale_radius(range = c(.1, 2)) +
   scale_color_manual(values = typeColor) +
   labs(
@@ -66,6 +69,7 @@ ggplot(diffData, aes(x = baseMean, y = log2FoldChange)) +
     aspect.ratio = 1,
     panel.background = element_blank(),
     panel.grid = element_blank(),
-    axis.line = element_line())
+    axis.line = element_line()
+  )
 
-ggsave("graphics/XF_vs_F.MAplot.png", width = 4, height = 4)
+ggsave("plot/ES_vs_Fib.MAplot.pdf", width = 4, height = 4)

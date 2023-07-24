@@ -27,29 +27,34 @@ library(clusterProfiler)
 
 anno <- readRDS("../../data/hg19anno.rds")
 
-diffList <- list(
-  hCiPSC_vs_Fib = fread("middata/1a_DESeq2/hCiPSC_vs_Fib.DEG.csv"),
-  ES_vs_Fib = fread("middata/1a_DESeq2/ES_vs_Fib.DEG.csv")
-)
+diffList <- readRDS("mid/DEGres.rds")
+diffList <- map(diffList, ~ as.data.table(.x, T))
 diffList <- map(diffList, ~ {colnames(.x)[1] <- "gene"; .x})
 diffList <- map(diffList, ~ .x[is.na(padj), padj := 1])
 
-# 3. Analyze ------------------------------------------------------------==
+# 3. Analyze --------------------------------------------------------------
 
-diffData[, type := "ns"][]
-diffData[log2FoldChange > 1 & padj < 0.05, type := "up"][log2FoldChange < -1 & padj < 0.05, type := "down"][]
-
-geneList <- list()
-geneList$XFup <- diffData[type == "up", gene]
-geneList$Fup <- diffData[type == "down", gene]
-
-egoList <- map(geneList, ~ {
-  enrichGO(
-    gene = na.omit(select(org.Hs.eg.db, keys = .x, columns = "ENTREZID", keytype = "SYMBOL")$ENTREZID),
-    OrgDb = "org.Hs.eg.db", ont = "BP", pvalueCutoff = 1, qvalueCutoff = 1, readable = T)
-})
-names(egoList)
-
-iwalk(egoList, ~ write.csv(.x@result, str_c(.y, ".GO.csv")))
+for(i in names(diffList)) {
+  message(i)
+  
+  diffData <- diffList[[i]]
+  
+  diffData[, type := "ns"]
+  diffData[log2FoldChange > 3 & padj < 0.05, type := "up"][log2FoldChange < -3 & padj < 0.05, type := "down"]
+  table(diffData$type)
+  
+  geneList <- list(
+    up = diffData[type == "up", gene],
+    down = diffData[type == "down", gene]
+  )
+  
+  egoList <- map(geneList, ~ {
+    enrichGO(
+      gene = na.omit(AnnotationDbi::select(org.Hs.eg.db, keys = .x, columns = "ENTREZID", keytype = "SYMBOL")$ENTREZID),
+      OrgDb = "org.Hs.eg.db", ont = "BP", pvalueCutoff = 1, qvalueCutoff = 1, readable = T)
+  })
+  
+  iwalk(egoList, ~ write.csv(.x@result, str_c("mid/", i, ".", .y, ".GO.csv")))
+}
 
 

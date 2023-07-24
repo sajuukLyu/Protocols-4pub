@@ -8,7 +8,7 @@
 #
 # ---
 
-# * 1. Load packages ------------------------------------------------------
+# 1. Load packages --------------------------------------------------------
 
 setwd("exampleData/RNA")
 
@@ -23,25 +23,23 @@ library(DESeq2)
 # for more information, please refer to:
 # http://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
 
-# * 2. Load data ----------------------------------------------------------
+# 2. Load data ------------------------------------------------------------
 
-dataMtx <- readRDS("dataMtx.rds")
+dataMtx <- readRDS("mid/dataMtx.rds")
 
 colnames(dataMtx)
 usedMtx <- dataMtx[, c(
   # c("wanted sample names"),
-  1:7,
+  c(3, 6, 4, 5, 1, 2),
   NULL
 )]
 
-# * 3. Analyze ------------------------------------------------------------
-
-dir.create("DESeq2")
+# 3. Analyze --------------------------------------------------------------
 
 se <- SummarizedExperiment(assays = list(counts = as.matrix(usedMtx)))
 se$condition <- factor(
-  rep(c("F", "XF"), c(3, 4)),
-  levels = c("F", "XF")
+  rep(c("Fib", "CiPS", "ES"), each = 2),
+  levels = c("Fib", "CiPS", "ES")
 )
 
 dds <- DESeqDataSet(se, design = ~ condition)
@@ -54,7 +52,7 @@ dds <- dds[geneKeep, ]
 
 # save vsd profile for visualization later
 vsd <- vst(dds, blind = T)
-saveRDS(vsd, "DESeq2/vsd.rds")
+saveRDS(vsd, "mid/vsd.rds")
 
 # perform DEG test
 dds <- DESeq(dds)
@@ -62,8 +60,10 @@ dds <- DESeq(dds)
 resultsNames(dds)
 
 DEGres <- list()
-DEGres$XF_vs_F <- lfcShrink(dds, coef = "condition_XF_vs_F", type = "apeglm")
+DEGres$CiPS_vs_Fib <- lfcShrink(dds, coef = "condition_CiPS_vs_Fib", type = "apeglm")
+DEGres$ES_vs_Fib <- lfcShrink(dds, coef = "condition_ES_vs_Fib", type = "apeglm")
 
-iwalk(DEGres, ~ write.csv(.x, glue("DESeq2/{.y}.DEG.csv")))
+saveRDS(DEGres, "mid/DEGres.rds")
+iwalk(DEGres, ~ write.csv(.x, glue("mid/{.y}.DEG.csv")))
 
-saveRDS(dds, "DESeq2/dds.rds")
+saveRDS(dds, "mid/dds.rds")

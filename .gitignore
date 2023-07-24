@@ -40,6 +40,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# some big files
-exampleData/ATAC/motif/allPeak.txt
-exampleData/ATAC/peak/peak_value.txt
+# some old files
+exampleData/RNA-old
+exampleData/*.pdf

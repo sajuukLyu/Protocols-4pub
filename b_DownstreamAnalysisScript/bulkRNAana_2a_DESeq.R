@@ -13,9 +13,9 @@
 #
 # ---
 
-# * 1. Load packages ------------------------------------------------------
+# 1. Load packages --------------------------------------------------------
 
-setwd("project/path")
+setwd("exampleData/RNA")
 
 # grammar
 library(tidyverse)
@@ -28,9 +28,9 @@ library(DESeq)
 # for more information, please refer to:
 # http://bioconductor.org/packages/3.10/bioc/vignettes/DESeq/inst/doc/DESeq.pdf
 
-# * 2. Load data ----------------------------------------------------------
+# 2. Load data ------------------------------------------------------------
 
-dataMtx <- readRDS("dataMtx.rds")
+dataMtx <- readRDS("mid/dataMtx.rds")
 
 colnames(dataMtx)
 usedMtx <- dataMtx[c(
@@ -38,7 +38,7 @@ usedMtx <- dataMtx[c(
   NULL
 )]
 
-# * 3. Analyze ------------------------------------------------------------
+# 3. Analyze --------------------------------------------------------------
 
 dir.create("DESeq")
 
