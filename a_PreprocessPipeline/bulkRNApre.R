@@ -16,6 +16,7 @@ library(magrittr)
 library(glue)
 
 setwd("/mnt/d/proj/github/Protocols-4pub")
+source("a_PreprocessPipeline/utils.R")
 
 settingList <- fromJSON("a_PreprocessPipeline/bulkRNApre_conf_X.json")
 cmdConf <- fromJSON("a_PreprocessPipeline/cmd_conf_X.json")
@@ -90,7 +91,7 @@ setCMD(trim_cmd, str_c("code/", trim_dir), 6)
 # 3. QC for trimmed data --------------------------------------------------
 
 # reload trimmed data first, or
-file_name <- glue("{rep(sample_name, each = 2)}_{rep(1:2, 6)}.trim.fastq.gz")
+file_name <- glue("{rep(sample_name, each = 2)}_{rep(1:2, length(sample_name))}.trim.fastq.gz")
 R1 <- grep("_1\\.", file_name, value = T)
 R2 <- grep("_2\\.", file_name, value = T)
 
@@ -166,37 +167,4 @@ cat(count_cmd)
 
 setCMD(count_cmd, str_c("code/", count_dir), 1)
 # multiqc -o 6_count -f -n count 6_count
-
-# C. Function -------------------------------------------------------------
-
-setCMD <- function(cmd, dir = ".", sepN = 1, conf = cmdConf) {
-  
-  idx <- seq_along(cmd) %% sepN
-  idx[idx == 0] <- sepN
-  
-  cmdList <- tapply(cmd, idx, c)
-  
-  cmdHead <- glue(cmdConf$head, .trim = F)
-  cmdList <- map2(cmdHead, cmdList, ~ c(.x, .y))
-  names(cmdList) <- 1:length(cmdList)
-  
-  iwalk(cmdList, ~ write.table(
-    .x,
-    glue("{dir}/batch{.y}.sh"),
-    sep = "\n", quote = F, row.names = F, col.names = F,
-    eol = "\n"
-  ))
-  
-  submit <- glue(
-    "{cmdConf$prefix} {dir}/batch{names(cmdList)}.sh {cmdConf$suffix}"
-  )
-  write.table(
-    c("#!/bin/bash", submit),
-    glue("{dir}/submit.sh"),
-    sep = "\n", quote = F, row.names = F, col.names = F,
-    eol = "\n"
-  )
-  
-  system(glue("ls -lh {dir}"))
-}
 

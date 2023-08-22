@@ -41,5 +41,5 @@ vignettes/*.pdf
 .Renviron
 
 # some old files
-exampleData/RNA-old
+exampleData/*-old
 exampleData/*.pdf

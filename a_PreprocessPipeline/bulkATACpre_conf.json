@@ -1,0 +1,18 @@
+{
+  "workDir": ["."],
+  "fastqcDir": ["fastqc"],
+  "trimmomaticDir": ["Trimmomatic-0.39/trimmomatic-0.39.jar"],
+  "trimAdapter": ["Trimmomatic-0.39/adapters/NexteraPE-PE.fa"],
+  "bt2Dir": ["bowtie2"],
+  "mapRef": ["ref/fasta/genome"],
+  "samtDir": ["samtools"],
+  "picardDir": ["picard.jar"],
+  "bedtDir": ["bedtools"],
+  "macsDir": ["macs2"],
+  "deeptDir": ["deeptools"],
+  "bdg2bwDir": ["bedGraphToBigWig"],
+  "refLen": ["ref/fasta/genome.fa.fai"],
+  "idrDir": ["idr"],
+  "homerDir": ["homer"],
+  "knownMotif": ["homer/data/knownTFs/vertebrates/known.motifs"]
+}

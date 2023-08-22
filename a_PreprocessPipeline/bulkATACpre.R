@@ -8,36 +8,22 @@
 # 
 # ---
 
-# * 0. Setting ------------------------------------------------------------
+# 0. Load packages --------------------------------------------------------
 
-settingList <- list(
-  workDir = ".",
-  fastqcDir = "fastqc",
-  trimmomaticDir = "app/Trimmomatic-0.39/trimmomatic-0.39.jar",
-  trimAdapter = "app/Trimmomatic-0.39/adapters/NexteraPE-PE.fa",
-  bt2Dir = "bowtie2",
-  mapRef = "fasta/genome",
-  stDir = "samtools",
-  picardDir = "app/picard.jar",
-  bedtDir = "bedtools",
-  macs2Dir = "macs2",
-  dtDir = "",
-  bdg2bwDir = "app/bedGraphToBigWig",
-  refLen = "fasta/genome.fa.fai",
-  idrDir = "idr",
-  homerDir = "",
-  knownMotif = "app/homer/data/knownTFs/vertebrates/known.motifs"
-)
-
-# * 1. Load packages ------------------------------------------------------
-
-setwd(settingList$workDir)
-
+library(jsonlite)
 library(tidyverse)
 library(magrittr)
 library(glue)
 
-# * 2. Preprocess ---------------------------------------------------------
+setwd("/mnt/d/proj/github/Protocols-4pub")
+source("a_PreprocessPipeline/utils.R")
+
+settingList <- fromJSON("a_PreprocessPipeline/bulkATACpre_conf_X.json")
+cmdConf <- fromJSON("a_PreprocessPipeline/cmd_conf_X.json")
+
+setwd(settingList$workDir)
+
+# A. Rename ---------------------------------------------------------------
 
 setwd("0_fastq")
 
@@ -50,7 +36,7 @@ file.rename(from_file, to_file)
 
 setwd("..")
 
-# * * 2.0. Load data ------------------------------------------------------
+# B. Load data ------------------------------------------------------------
 
 file_name <- list.files("0_fastq", ".gz")
 file_name <- list.files("2_trim", ".gz") # after qc
@@ -60,151 +46,174 @@ R2 <- grep("_2\\.", file_name, value = T)
 
 sample_name <- gsub("_1\\..*", "", R1)
 
-# * * 2.1. QC for raw data ------------------------------------------------
+# 1. QC for raw data ------------------------------------------------------
 
 dir.create("code")
 
 qc_dir <- "1_qc"
 qc_dir %>% dir.create()
+qc_dir %>% str_c("code/", .) %>% dir.create()
 
 qc <- settingList$fastqcDir
 
-qc_cmd <- glue("{qc} -o {qc_dir} -t 8 0_fastq/{file_name} &")
+qc_cmd <- glue("{qc} -o {qc_dir} -t 48 0_fastq/{file_name}")
 cat(qc_cmd[1])
 
-write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
+setCMD(qc_cmd, str_c("code/", qc_dir), 6)
 # multiqc -o 1_qc -f -n qc.raw 1_qc/*.zip
 
-# * * 2.2. Trim -----------------------------------------------------------
+# 2. Trim -----------------------------------------------------------------
 
-dir.create("2_trim")
+trim_dir <- "2_trim"
+trim_dir %>% dir.create()
+trim_dir %>% str_c("code/", .) %>% dir.create()
 dir.create(".2_untrim")
 
 trim <- settingList$trimmomaticDir
 adapter <- settingList$trimAdapter
 
 trim_cmd <- glue(
-  "java -jar {trim} PE -threads 10 \\
+  "java -jar {trim} PE -threads 48 \\
   0_fastq/{R1} 0_fastq/{R2} \\
   2_trim/{sample_name}_1.trim.fastq.gz \\
   .2_untrim/{sample_name}_1.untrim.fastq.gz \\
   2_trim/{sample_name}_2.trim.fastq.gz \\
   .2_untrim/{sample_name}_2.untrim.fastq.gz \\
   ILLUMINACLIP:{adapter}:2:30:7:1:true \\
-  LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 > 2_trim/{sample_name}.trim.log 2>&1")
+  LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 > \\
+  2_trim/{sample_name}.trim.log 2>&1"
+)
 cat(trim_cmd[1])
 
-trim_dir <- "2_trim"
-trim_dir %>% str_c("code/", .) %>% dir.create()
-
-setCMD(trim_cmd, str_c("code/", trim_dir), 1, F)
+setCMD(trim_cmd, str_c("code/", trim_dir), 6)
 # multiqc -o 2_trim -f -n trim 2_trim/*.log
 
-# * * 2.3. QC for trimmed data --------------------------------------------
+# 3. QC for trimmed data --------------------------------------------------
 
-# reload trimmed data first
+# reload trimmed data first, or
+file_name <- glue("{rep(sample_name, each = 2)}_{rep(1:2, length(sample_name))}.trim.fastq.gz")
+R1 <- grep("_1\\.", file_name, value = T)
+R2 <- grep("_2\\.", file_name, value = T)
 
 qc_dir <- "3_qc"
 qc_dir %>% dir.create()
+qc_dir %>% str_c("code/", .) %>% dir.create()
 
-qc_cmd <- glue("fastqc -o {qc_dir} -t 8 {trim_dir}/{file_name} &")
+qc <- settingList$fastqcDir
+
+qc_cmd <- glue("{qc} -o {qc_dir} -t 48 {trim_dir}/{file_name}")
 cat(qc_cmd[1])
 
-write.table(c("#!/bin/bash\n", qc_cmd), glue("code/{qc_dir}.sh"), quote = F, row.names = F, col.names = F)
+setCMD(qc_cmd, str_c("code/", qc_dir), 6)
 # multiqc -o 3_qc -f -n qc.trim 3_qc/*.zip
 
-# * * 2.4. Map ------------------------------------------------------------
-
-bt2 <- settingList$bt2Dir
-ref <- settingList$mapRef
+# 4. Map ------------------------------------------------------------------
 
 map_dir <- "4_map"
 map_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
+bt2 <- settingList$bt2Dir
+ref <- settingList$mapRef
+
 map_cmd <- glue(
-  "{bt2} -p 20 --very-sensitive -X 2000 -x {ref} \\
+  "{bt2} -p 48 --very-sensitive -X 2000 -x {ref} \\
   -1 {trim_dir}/{R1} -2 {trim_dir}/{R2} \\
-  -S {map_dir}/{sample_name}.sam > {map_dir}/{sample_name}.log 2>&1")
+  -S {map_dir}/{sample_name}.sam > \\
+  {map_dir}/{sample_name}.log 2>&1"
+)
 cat(map_cmd[1])
 
-setCMD(map_cmd, str_c("code/", map_dir), 1, T)
+setCMD(map_cmd, str_c("code/", map_dir), 6)
 # multiqc -o 4_map -f -n map 4_map/*.log
 
-# * * 2.5. Sort -----------------------------------------------------------
-
-st <- settingList$stDir
+# 5. Sort -----------------------------------------------------------------
 
 sort_dir <- "5_sort"
 sort_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
+samt <- settingList$samtDir
+
 sort_cmd <- glue(
-  "{st} view -@ 10 -bS {map_dir}/{sample_name}.sam | \\
-  {st} sort -@ 10 > {sort_dir}/{sample_name}.bam")
+  "{samt} view -@ 24 -bS {map_dir}/{sample_name}.sam | \\
+  {samt} sort -@ 24 > \\
+  {sort_dir}/{sample_name}.bam"
+)
 cat(sort_cmd[1])
 
-setCMD(sort_cmd, str_c("code/", sort_dir), 1, T)
+setCMD(sort_cmd, str_c("code/", sort_dir), 6)
 
-# * * 2.6. Dedup ----------------------------------------------------------
-
-picard <- settingList$picardDir
+# 6. Dedup ----------------------------------------------------------------
 
 dedup_dir <- "6_dedup"
 dedup_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
+picard <- settingList$picardDir
+
 dedup_cmd <- glue(
-  "java -Xms2g -Xmx8g -XX:ParallelGCThreads=8 -jar {picard} MarkDuplicates \\
+  "java -Xms16g -Xmx256g -jar {picard} MarkDuplicates \\
   I={sort_dir}/{sample_name}.bam \\
   O={dedup_dir}/{sample_name}.dedup.bam \\
   M={dedup_dir}/{sample_name}.dedup.txt \\
-  REMOVE_DUPLICATES=true > {dedup_dir}/{sample_name}.dedup.log 2>&1")
+  REMOVE_DUPLICATES=true > \\
+  {dedup_dir}/{sample_name}.dedup.log 2>&1"
+)
 cat(dedup_cmd[1])
 
-setCMD(dedup_cmd, str_c("code/", dedup_dir), 1, T)
+setCMD(dedup_cmd, str_c("code/", dedup_dir), 6)
 
-# * * 2.7. Filter ---------------------------------------------------------
+# 7. Filter ---------------------------------------------------------------
 
 fil_dir <- "7_filter"
-fil_dir %>% dir.create()
+fil_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
-filter_cmd <- glue(
-  "{st} view -h -f 2 -q 30 {dedup_dir}/{sample_name}.dedup.bam | \\
-  egrep -v '\\bMT|\\bGL|\\bJH' | {st} sort -@ 4 -O bam > {fil_dir}/{sample_name}.filter.bam &")
-cat(filter_cmd[1])
+samt <- settingList$samtDir
 
-write.table(c("#!/bin/bash\n", filter_cmd), glue("code/{fil_dir}.sh"), quote = F, row.names = F, col.names = F)
+fil_cmd <- glue(
+  "{samt} view -@ 20 -h -f 2 -q 30 {dedup_dir}/{sample_name}.dedup.bam | \\
+  egrep -v '\\bMT|\\bGL|\\bJH' | \\
+  {samt} sort -@ 20 -O bam > \\
+  {fil_dir}/{sample_name}.filter.bam"
+)
+cat(fil_cmd[1])
 
-# * * 2.8. Insert ---------------------------------------------------------
+setCMD(fil_cmd, str_c("code/", fil_dir), 6)
+
+# 8. Insert ---------------------------------------------------------------
+
+ins_dir <- "8_insert"
+ins_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
 picard <- settingList$picardDir
 
-ins_dir <- "8_insert"
-ins_dir %>% dir.create()
-
 ins_cmd <- glue(
-  "java -Xms2g -Xmx8g -XX:ParallelGCThreads=8 -jar {picard} CollectInsertSizeMetrics \\
+  "java -Xms16g -Xmx256g -jar {picard} CollectInsertSizeMetrics \\
   I={fil_dir}/{sample_name}.filter.bam \\
   O={ins_dir}/{sample_name}.txt \\
-  H={ins_dir}/{sample_name}.pdf > {ins_dir}/{sample_name}.log 2>&1 &")
+  H={ins_dir}/{sample_name}.pdf > \\
+  {ins_dir}/{sample_name}.log 2>&1"
+)
 cat(ins_cmd[1])
 
-write.table(c("#!/bin/bash\n", ins_cmd), glue("code/{ins_dir}.sh"), quote = F, row.names = F, col.names = F)
+setCMD(ins_cmd, str_c("code/", ins_dir), 6)
 
-# * * 2.9. Shift ----------------------------------------------------------
+# 9. Shift ----------------------------------------------------------------
+
+shift_dir <- "9_shift"
+shift_dir %T>% dir.create() %>% str_c("code/", .) %>% dir.create()
 
 bedt <- settingList$bedtDir
 
-shift_dir <- "9_shift"
-shift_dir %>% dir.create()
-
 shift_cmd <- glue(
-  "{bedt} bamtobed -i {fil_dir}/{sample_name}.filter.bam | {awk_cmd} \\
-  > {shift_dir}/{sample_name}.shift.bed &",
-  awk_cmd = "awk -F '\\t' 'BEGIN {OFS = FS}{ if ($6 == \"+\") {$2 = $2 + 4} else if ($6 == \"-\") {$3 = $3 - 5} print $0}'")
+  "{bedt} bamtobed -i {fil_dir}/{sample_name}.filter.bam | \\
+  {awk_cmd} \\
+  > {shift_dir}/{sample_name}.shift.bed",
+  awk_cmd = "awk -F '\\t' 'BEGIN {OFS = FS}{ if ($6 == \"+\") {$2 = $2 + 4} else if ($6 == \"-\") {$3 = $3 - 5} print $0}'"
+)
 cat(shift_cmd[1])
 
-write.table(c("#!/bin/bash\n", shift_cmd), glue("code/{shift_dir}.sh"), quote = F, row.names = F, col.names = F)
+setCMD(shift_cmd, str_c("code/", shift_dir), 6)
 
-# * * 2.10. Peak ----------------------------------------------------------
+# 10. Peak ----------------------------------------------------------------
 
 macs2 <- settingList$macs2Dir
 
@@ -390,28 +399,3 @@ cat(anno_cmd)
 
 write.table(c("#!/bin/bash\n", anno_cmd), glue("code/{anno_dir}.sh"), quote = F, row.names = F, col.names = F)
 
-# * 3. Function -----------------------------------------------------------
-
-setCMD <- function(cmd, dir = ".", sepN = 1, clu = F) {
-  cmd %>% tapply(seq_along(.) %% sepN, c) %>% imap(~ {
-    ifelse(clu, glue(
-      "#!/bin/bash
-      #SBATCH -J batch{.y}
-      #SBATCH -o batch{.y}.%j.out
-      #SBATCH -e batch{.y}.%j.err
-      #SBATCH -p cn-long
-      #SBATCH -N 1
-      #SBATCH --ntasks-per-node=20
-      #SBATCH --no-requeue
-      #SBATCH -A hkdeng_g1
-      #SBATCH --qos=hkdengcnl
-      export PATH=/gpfs1/hkdeng_pkuhpc/lvyl/app/anaconda3/envs/lvyl/bin:$PATH"),
-      "#!/bin/bash") %>%
-      c(.x)}) %T>%
-    iwalk(~ write.table(.x, glue("{dir}/batch{.y}.sh"), quote = F, row.names = F, col.names = F)) %>%
-    names() %>% map_chr(~ glue("{head} {dir}/batch{.x}.sh {tail}",
-                               head = ifelse(clu, "pkubatch", "sh"),
-                               tail = ifelse(clu, "; sleep 1", "&"))) %>%
-    c("#!/bin/bash", .) %>% as_tibble() %>%
-    write_delim(glue("{dir}/submit.sh"), "\n", col_names = F)
-}
